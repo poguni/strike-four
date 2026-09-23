@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>홈런 숫자야구</title>
+  <script>
+    (function () {
+      var THEME_KEY = 'numball_theme';
+      var saved = localStorage.getItem(THEME_KEY) || 'pastel';
+      document.documentElement.setAttribute('data-theme', saved);
+    })();
+  </script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="app">
+    <header class="app-header">
+      <div class="brand">
+        <div class="brand-badge" aria-hidden="true">
+          <svg class="icon-pastel" width="26" height="26" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="9" fill="#FFFFFF" stroke="#F7A8C4" stroke-width="1.5"/>
+            <path d="M8 5.5C7 8 7 16 8 18.5" stroke="#F7A8C4" stroke-width="1.3" stroke-linecap="round"/>
+            <path d="M16 5.5C17 8 17 16 16 18.5" stroke="#F7A8C4" stroke-width="1.3" stroke-linecap="round"/>
+          </svg>
+          <svg class="icon-modern" width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M12 3 L20 8 L20 16 L12 21 L4 16 L4 8 Z" stroke="#FFFFFF" stroke-width="1.6" stroke-linejoin="round"/>
+            <circle cx="12" cy="12" r="2.6" fill="#FFFFFF"/>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <span class="brand-eyebrow">STRIKE FOUR</span>
+          <h1 class="logo">홈런 숫자야구</h1>
+        </div>
+      </div>
+      <div class="theme-picker">
+        <span class="theme-swatch" aria-hidden="true"></span>
+        <select id="theme-select" aria-label="디자인 테마 선택">
+          <option value="pastel">파스텔톤</option>
+          <option value="modern">모던 클린</option>
+        </select>
+      </div>
+    </header>
+
+    <main class="screen" id="screen-main">
+      <section class="profile-card">
+        <div class="profile-avatar" id="profile-avatar" aria-hidden="true">나</div>
+        <div class="profile-info">
+          <div class="profile-name-row">
+            <p class="profile-name" id="profile-name">플레이어</p>
+            <button type="button" class="icon-btn" id="edit-nickname-btn" aria-label="닉네임 수정">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M4 20h4L18.5 9.5a2.121 2.121 0 0 0-3-3L5 17v3z"></path>
+              </svg>
+            </button>
+          </div>
+          <p class="profile-record" id="profile-record">0승 0패</p>
+        </div>
+      </section>
+
+      <nav class="menu-buttons">
+        <button type="button" class="btn btn-primary" id="btn-practice">
+          <span class="action-icon" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 21c-4-3-7-6-7-10a7 7 0 0 1 14 0c0 4-3 7-7 10z" stroke="white" stroke-width="1.6"/><circle cx="12" cy="11" r="2.2" fill="white"/></svg>
+          </span>
+          <span class="action-text">
+            <span class="action-title">혼자 연습하기</span>
+            <span class="action-subtitle">AI와 함께 감을 익혀요</span>
+          </span>
+        </button>
+        <button type="button" class="btn btn-secondary btn--blue" id="btn-create-session">
+          <span class="action-icon" aria-hidden="true">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="4.3" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/></svg>
+          </span>
+          <span class="action-text">
+            <span class="action-title">학급 방 만들기 (교사용)</span>
+            <span class="action-subtitle">학급 친구들과 랜덤 대결해요</span>
+          </span>
+        </button>
+        <button type="button" class="btn btn-secondary btn--pink" id="btn-join-session">
+          <span class="action-icon" aria-hidden="true">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none"><path d="M13 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M3 12h11m0 0-3.5-3.5M14 12l-3.5 3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </span>
+          <span class="action-text">
+            <span class="action-title">방 참가하기</span>
+            <span class="action-subtitle">QR 스캔 또는 코드로 입장해요</span>
+          </span>
+        </button>
+        <button type="button" class="btn btn-secondary btn--yellow" id="btn-leaderboard">
+          <span class="action-icon" aria-hidden="true">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none"><path d="M7 4h10v3a5 5 0 0 1-10 0V4z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M7 5H4v2a3 3 0 0 0 3 3M17 5h3v2a3 3 0 0 1-3 3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M12 12v4m-3 3h6m-3-3v3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          </span>
+          <span class="action-text">
+            <span class="action-title">실시간 랭킹</span>
+            <span class="action-subtitle">우리 반 순위를 확인해요</span>
+          </span>
+        </button>
+      </nav>
+    </main>
+
+    <section class="screen" id="screen-practice-setup" hidden>
+      <h2>난이도 선택</h2>
+      <div class="difficulty-options">
+        <button type="button" class="btn btn-secondary difficulty-btn" data-level="easy">쉬움</button>
+        <button type="button" class="btn btn-secondary difficulty-btn" data-level="normal">보통</button>
+        <button type="button" class="btn btn-secondary difficulty-btn" data-level="hard">어려움</button>
+      </div>
+      <div class="attempts-options">
+        <label for="attempts-select">시도 횟수</label>
+        <select id="attempts-select">
+          <option value="10" selected>10회</option>
+          <option value="11">11회</option>
+          <option value="12">12회</option>
+          <option value="13">13회</option>
+          <option value="14">14회</option>
+          <option value="15">15회</option>
+          <option value="16">16회</option>
+          <option value="17">17회</option>
+          <option value="18">18회</option>
+          <option value="19">19회</option>
+          <option value="20">20회</option>
+        </select>
+      </div>
+      <button type="button" class="btn btn-primary" id="start-practice-btn">시작하기</button>
+      <button type="button" class="btn btn-secondary" id="practice-setup-back-btn">뒤로</button>
+    </section>
+
+    <section class="screen" id="screen-practice-game" hidden>
+      <div class="game-status">
+        <span id="practice-turn-indicator">내 차례</span>
+        <span id="practice-remaining">남은 시도: 10회</span>
+      </div>
+
+      <div class="attack-boards">
+        <div class="attack-board">
+          <h3>나의 공격 기록</h3>
+          <ol id="my-attack-log" class="attack-log"></ol>
+        </div>
+        <div class="attack-board">
+          <h3>상대(AI) 공격 기록</h3>
+          <ol id="ai-attack-log" class="attack-log"></ol>
+        </div>
+      </div>
+
+      <div class="guess-display" id="guess-display" aria-live="polite">
+        <span class="guess-slot"></span>
+        <span class="guess-slot"></span>
+        <span class="guess-slot"></span>
+        <span class="guess-slot"></span>
+      </div>
+
+      <div class="keypad" id="keypad">
+        <button type="button" class="keypad-btn" data-digit="1">1</button>
+        <button type="button" class="keypad-btn" data-digit="2">2</button>
+        <button type="button" class="keypad-btn" data-digit="3">3</button>
+        <button type="button" class="keypad-btn" data-digit="4">4</button>
+        <button type="button" class="keypad-btn" data-digit="5">5</button>
+        <button type="button" class="keypad-btn" data-digit="6">6</button>
+        <button type="button" class="keypad-btn" data-digit="7">7</button>
+        <button type="button" class="keypad-btn" data-digit="8">8</button>
+        <button type="button" class="keypad-btn" data-digit="9">9</button>
+        <button type="button" class="keypad-btn" data-digit="0">0</button>
+        <button type="button" class="keypad-btn keypad-action" data-action="clear">지우기</button>
+        <button type="button" class="keypad-btn keypad-action" data-action="submit">확인</button>
+      </div>
+
+      <button type="button" class="btn btn-secondary" id="practice-quit-btn">그만하기</button>
+    </section>
+
+    <section class="screen" id="screen-practice-result" hidden>
+      <div class="result-trophy" id="practice-result-trophy" aria-hidden="true">🏆</div>
+      <h2 id="practice-result-title">홈런!</h2>
+      <p id="practice-result-detail"></p>
+      <button type="button" class="btn btn-primary" id="practice-retry-btn">다시하기</button>
+      <button type="button" class="btn btn-secondary" id="practice-home-btn">메인으로</button>
+    </section>
+
+    <section class="screen" id="screen-create-session" hidden>
+      <h2 id="create-session-title">학급 방</h2>
+      <p id="create-session-status">방을 만드는 중...</p>
+      <div class="room-settings" id="create-session-settings" hidden>
+        <div class="room-settings-row">
+          <label for="setting-turn-seconds">턴 시간</label>
+          <select id="setting-turn-seconds">
+            <option value="20">20초</option>
+            <option value="30" selected>30초</option>
+            <option value="40">40초</option>
+          </select>
+        </div>
+        <div class="room-settings-row">
+          <label for="setting-max-attempts">시도 횟수</label>
+          <select id="setting-max-attempts">
+            <option value="10" selected>10회</option>
+            <option value="11">11회</option>
+            <option value="12">12회</option>
+            <option value="13">13회</option>
+            <option value="14">14회</option>
+            <option value="15">15회</option>
+            <option value="16">16회</option>
+            <option value="17">17회</option>
+            <option value="18">18회</option>
+            <option value="19">19회</option>
+            <option value="20">20회</option>
+          </select>
+        </div>
+        <p class="hint">설정은 앞으로 새로 매칭되는 대전부터 적용돼요.</p>
+      </div>
+      <p class="session-code-display"><span id="create-session-code">------</span></p>
+      <div id="create-session-qr" class="qr-box" role="button" tabindex="0" aria-label="QR 코드 크게 보기"></div>
+      <p class="qr-hint">QR을 클릭하면 화면 가운데에 크게 보여요</p>
+      <a id="create-session-link" class="session-link" href="#" target="_blank" rel="noopener noreferrer">-</a>
+      <p id="create-session-counts" class="session-counts"></p>
+      <button type="button" class="btn btn-secondary" id="create-session-back-btn">메인으로</button>
+    </section>
+
+    <div id="qr-modal" class="modal-overlay" hidden>
+      <div class="modal-card qr-modal-card">
+        <div id="qr-modal-content" class="qr-box qr-box-large"></div>
+        <p class="session-code-display" id="qr-modal-code">------</p>
+        <button type="button" class="btn btn-secondary" id="qr-modal-close-btn">닫기</button>
+      </div>
+    </div>
+
+    <section class="screen" id="screen-join-session" hidden>
+      <h2>방 참가하기</h2>
+      <form id="join-session-form">
+        <label for="join-session-code-input">6자리 코드 입력</label>
+        <input type="text" id="join-session-code-input" inputmode="numeric" maxlength="6" placeholder="123456" autocomplete="off" required>
+        <button type="submit" class="btn btn-primary">참가하기</button>
+      </form>
+      <p id="join-session-status"></p>
+      <button type="button" class="btn btn-secondary" id="join-session-back-btn">메인으로</button>
+    </section>
+
+    <section class="screen" id="screen-lobby" hidden>
+      <h2>대기열</h2>
+      <p>방 코드: <strong id="lobby-session-code">------</strong></p>
+      <p id="lobby-status">상대를 기다리는 중이에요...</p>
+      <button type="button" class="btn btn-secondary" id="invite-friend-btn">친구 초대하기</button>
+      <button type="button" class="btn btn-secondary" id="lobby-leave-btn">나가기</button>
+    </section>
+
+    <section class="screen" id="screen-room-game" hidden>
+      <div class="game-status">
+        <span id="room-turn-indicator">내 차례</span>
+        <span id="room-attempt-status"></span>
+        <span id="room-timer"></span>
+      </div>
+      <p class="hint" id="room-opponent-name">상대: -</p>
+
+      <div class="attack-boards">
+        <div class="attack-board">
+          <h3>나의 공격 기록</h3>
+          <ol id="room-my-attack-log" class="attack-log"></ol>
+        </div>
+        <div class="attack-board">
+          <h3>상대 공격 기록</h3>
+          <ol id="room-opponent-attack-log" class="attack-log"></ol>
+        </div>
+      </div>
+
+      <div class="guess-display" id="room-guess-display" aria-live="polite">
+        <span class="guess-slot"></span>
+        <span class="guess-slot"></span>
+        <span class="guess-slot"></span>
+        <span class="guess-slot"></span>
+      </div>
+
+      <div class="keypad" id="room-keypad">
+        <button type="button" class="keypad-btn" data-digit="1">1</button>
+        <button type="button" class="keypad-btn" data-digit="2">2</button>
+        <button type="button" class="keypad-btn" data-digit="3">3</button>
+        <button type="button" class="keypad-btn" data-digit="4">4</button>
+        <button type="button" class="keypad-btn" data-digit="5">5</button>
+        <button type="button" class="keypad-btn" data-digit="6">6</button>
+        <button type="button" class="keypad-btn" data-digit="7">7</button>
+        <button type="button" class="keypad-btn" data-digit="8">8</button>
+        <button type="button" class="keypad-btn" data-digit="9">9</button>
+        <button type="button" class="keypad-btn" data-digit="0">0</button>
+        <button type="button" class="keypad-btn keypad-action" data-action="clear">지우기</button>
+        <button type="button" class="keypad-btn keypad-action" data-action="submit">확인</button>
+      </div>
+    </section>
+
+    <section class="screen" id="screen-room-result" hidden>
+      <div class="result-trophy" id="room-result-trophy" aria-hidden="true">🏆</div>
+      <h2 id="room-result-title">결과</h2>
+      <p id="room-result-detail"></p>
+      <button type="button" class="btn btn-primary" id="room-rematch-btn">다시 대결하기</button>
+      <button type="button" class="btn btn-secondary" id="room-result-home-btn">메인으로</button>
+    </section>
+
+    <section class="screen" id="screen-ranking" hidden>
+      <h2>실시간 랭킹</h2>
+      <p id="ranking-status" class="hint">불러오는 중...</p>
+      <ol id="ranking-list" class="ranking-list"></ol>
+      <button type="button" class="btn btn-secondary" id="ranking-back-btn">메인으로</button>
+    </section>
+  </div>
+
+  <div id="nickname-modal" class="modal-overlay" hidden>
+    <form id="nickname-form" class="modal-card">
+      <h2>이름을 알려주세요</h2>
+      <input type="text" id="nickname-input" name="nickname" maxlength="10" placeholder="이름 또는 닉네임" autocomplete="off" required>
+      <button type="submit" class="btn btn-primary">시작하기</button>
+    </form>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+  <script src="supabase-config.js"></script>
+  <script src="game.js"></script>
+  <script src="app.js"></script>
+  <script src="practice.js"></script>
+  <script src="session.js"></script>
+  <script src="room.js"></script>
+  <script src="leaderboard.js"></script>
+</body>
+</html>
