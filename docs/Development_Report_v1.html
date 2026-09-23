@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>홈런 숫자야구 개발 보고서 v1</title>
+<style>
+  :root { --sidebar-w: 260px; --accent: #4F46E5; --text: #1f2430; --muted: #6b7280; --bg: #ffffff; --panel: #f7f7fb; --border: #e5e7eb; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, "Segoe UI", "Noto Sans KR", sans-serif; color: var(--text); background: var(--bg); line-height: 1.65; }
+  .layout { display: flex; min-height: 100vh; }
+  nav.sidebar { position: sticky; top: 0; align-self: flex-start; width: var(--sidebar-w); flex-shrink: 0; height: 100vh; overflow-y: auto; padding: 24px 16px; background: var(--panel); border-right: 1px solid var(--border); }
+  nav.sidebar h1 { font-size: 15px; margin: 0 0 4px; }
+  nav.sidebar .meta { font-size: 12px; color: var(--muted); margin-bottom: 16px; }
+  nav.sidebar a { display: block; padding: 7px 10px; margin: 2px 0; font-size: 13.5px; color: var(--text); text-decoration: none; border-radius: 8px; }
+  nav.sidebar a:hover { background: #eceafd; }
+  nav.sidebar a.active { background: var(--accent); color: #fff; }
+  main { flex: 1; min-width: 0; padding: 40px 48px; max-width: 860px; }
+  main section { margin-bottom: 48px; scroll-margin-top: 24px; }
+  main h2 { font-size: 22px; border-bottom: 2px solid var(--border); padding-bottom: 8px; }
+  main h3 { font-size: 17px; color: var(--accent); margin-top: 28px; }
+  main p { font-size: 15px; }
+  main ul, main ol { font-size: 15px; }
+  main table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+  main th, main td { border: 1px solid var(--border); padding: 8px 10px; font-size: 14px; text-align: left; vertical-align: top; }
+  main th { background: var(--panel); }
+  main code { background: #f1f1f5; padding: 1px 5px; border-radius: 4px; font-size: 0.9em; }
+  main strong { color: #111; }
+  .badge { display: inline-block; font-size: 12px; padding: 2px 8px; border-radius: 999px; background: #eceafd; color: var(--accent); margin-right: 6px; }
+  @media (max-width: 800px) {
+    .layout { flex-direction: column; }
+    nav.sidebar { position: relative; width: 100%; height: auto; border-right: none; border-bottom: 1px solid var(--border); }
+    main { padding: 24px 20px; }
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+  <nav class="sidebar" id="sidebar">
+    <h1>홈런 숫자야구 (Strike Four)</h1>
+    <div class="meta">개발 보고서 v1 · 2026-09-24</div>
+    <a href="#sec-1">1. 개요</a>
+    <a href="#sec-2">2. 목표 및 배경</a>
+    <a href="#sec-3">3. 주요 기능</a>
+    <a href="#sec-4">4. 기술 스택 및 아키텍처</a>
+    <a href="#sec-5">5. 개발 과정 (타임라인)</a>
+    <a href="#sec-6">6. 주요 의사결정과 이유</a>
+    <a href="#sec-7">7. 문제 해결 기록</a>
+    <a href="#sec-8">8. 보안/성능 고려사항</a>
+    <a href="#sec-9">9. 테스트 및 검증</a>
+    <a href="#sec-10">10. 배포</a>
+    <a href="#sec-11">11. 알려진 한계</a>
+    <a href="#sec-12">12. 향후 개선 아이디어</a>
+  </nav>
+  <main id="content">
+
+    <section id="sec-1">
+      <h2>1. 개요</h2>
+      <p><strong>홈런 숫자야구(Strike Four)</strong>는 초등학교 교실에서 로그인 없이 바로 즐길 수 있는 숫자야구(불스앤카우) 웹 게임이다. 학생은 이름/닉네임만 입력하면 되고, 혼자 AI와 연습하거나 교사가 띄운 QR코드로 반 친구와 실시간 1:1 대전을 할 수 있다. 대상 사용자는 초등학교 교사와 학생이며, 전자칠판·태블릿·스마트폰 등 다양한 화면 크기에서 쓰이는 것을 전제로 설계했다.</p>
+    </section>
+
+    <section id="sec-2">
+      <h2>2. 목표 및 배경</h2>
+      <ul>
+        <li><strong>핵심 가치</strong>: 회원가입/로그인 장벽 없이, 교사가 QR 하나만 띄우면 반 전체가 즉시 랜덤 매칭되어 대전할 수 있게 하는 것.</li>
+        <li><strong>배경</strong>: PRD·디자인 시안(파스텔톤/모던 클린 2종, 데스크톱/모바일)이 먼저 준비되어 있었고, 이를 바탕으로 Claude Code와 함께 Phase 0~7 순서로 단계적으로 구현했다. 매 Phase마다 사용자가 직접 브라우저에서 테스트하고 피드백을 준 뒤 다음 Phase로 넘어갔다.</li>
+        <li><strong>왜 단계별(Phase) 진행을 택했는가</strong>: 실시간 매칭·리더보드처럼 처음 시도하는 영역이 있어, 한 번에 전체를 구현(autopilot)하기보다 매 단계 사용자가 실제로 확인하며 방향을 조정하는 편이 리스크가 적다고 판단했다.</li>
+      </ul>
+    </section>
+
+    <section id="sec-3">
+      <h2>3. 주요 기능</h2>
+      <ul>
+        <li><strong>혼자 연습하기(vs AI)</strong>: 쉬움/보통/어려움 3단계 난이도, 시도 횟수 10~20회 선택. 어려움 난이도는 제약 전파 기반 추론 AI.</li>
+        <li><strong>학급 방 만들기(교사용)</strong>: 정원 제한 없는 방을 만들고 QR/6자리 코드를 배포하면, 들어온 학생들이 2명씩 자동으로 랜덤 매칭된다. 턴 제한 시간(20/30/40초)과 시도 횟수(10~20회)를 방 화면에서 바로 조정할 수 있다.</li>
+        <li><strong>친구 초대</strong>: 정원 2명짜리 방을 만들어 QR/코드로 특정 친구만 초대.</li>
+        <li><strong>실시간 1:1 대전</strong>: 턴 동기화, 판정, 시간 초과 자동 스킵, 상대 이탈 시 25초 후 부전승 처리, 대전 종료 후 재대결(재매칭) 지원.</li>
+        <li><strong>결과 화면</strong>: 승/패/무승부에 따라 트로피 이모지와 승리 시 컨페티 효과, 상대의 정답과 시도 횟수 공개.</li>
+        <li><strong>학급 단위 리더보드</strong>: 같은 교사(학급) 세션에 참여한 학생들끼리만 승-패, 승률, 최소 시도 홈런 기준으로 순위 집계(3전 이상부터 랭킹 진입).</li>
+        <li><strong>테마 전환</strong>: 파스텔톤(기본)/모던 클린 드롭다운 즉시 전환, localStorage에 저장.</li>
+        <li><strong>공격 기록 표시</strong>: <code>#01 1234 [3S][1B]</code> 형태로 시도 번호·입력값·스트라이크(빨강)/볼(초록) 배지 표시.</li>
+      </ul>
+    </section>
+
+    <section id="sec-4">
+      <h2>4. 기술 스택 및 아키텍처</h2>
+      <table>
+        <tr><th>영역</th><th>선택</th><th>이유</th></tr>
+        <tr><td>프론트엔드</td><td>바닐라 JS, 빌드 도구 없음</td><td>GitHub Pages에 그대로 올리면 되고, 프로젝트 규모상 프레임워크가 오버스펙</td></tr>
+        <tr><td>화면 전환</td><td><code>.screen</code> 섹션 + <code>showScreen(id)</code></td><td>SPA 프레임워크 없이 가장 단순하게 다중 화면을 구현하는 방식</td></tr>
+        <tr><td>백엔드/DB</td><td>Supabase (Postgres, Free Tier)</td><td>별도 API 서버 없이 DB + 실시간(Realtime) + RLS를 한 번에 제공, 로그인 없는 구조와 잘 맞음</td></tr>
+        <tr><td>실시간 동기화</td><td>Supabase Realtime (postgres_changes + Presence)</td><td>턴 진행 상황과 상대 접속 여부를 1초 내외로 반영</td></tr>
+        <tr><td>동시성 제어</td><td>Postgres <code>FOR UPDATE [SKIP LOCKED]</code></td><td>여러 학생이 동시에 매칭을 시도해도 중복 매칭·경쟁 상태 방지</td></tr>
+        <tr><td>서버 로직</td><td><code>SECURITY DEFINER</code> SQL 함수</td><td>로그인이 없어 클라이언트를 신뢰할 수 없으므로, 매칭·판정처럼 정합성이 중요한 로직은 전부 서버(DB 함수) 안에서만 실행</td></tr>
+        <tr><td>QR 코드</td><td>qrcodejs (CDN)</td><td>가볍고 빌드 없이 바로 쓸 수 있음</td></tr>
+        <tr><td>시각 효과</td><td>canvas-confetti (CDN)</td><td>승리 연출용, 로드 실패해도 게임에 영향 없도록 방어 코드 처리</td></tr>
+        <tr><td>배포</td><td>GitHub Pages (저장소 루트 index.html)</td><td>정적 파일만으로 무료 배포 가능</td></tr>
+      </table>
+      <h3>핵심 아키텍처 결정 — "익명 사용자를 어떻게 안전하게 신뢰할 것인가"</h3>
+      <p>로그인이 없으므로 모든 anon 키 호출은 잠재적으로 조작될 수 있다고 가정했다. 그래서:</p>
+      <ol>
+        <li>상대의 비밀번호(<code>room_secrets</code> 테이블)는 RLS 정책을 아예 만들지 않아 anon 키로는 어떤 방식으로도 직접 조회가 불가능하고,</li>
+        <li>판정·매칭·종료 처리는 전부 <code>SECURITY DEFINER</code> 함수 내부에서만 이루어지며,</li>
+        <li>게임이 끝난 뒤 상대 정답을 보여줘야 할 때도 <code>get_room_reveal()</code> 함수가 <code>status = 'finished'</code>인 방에 대해서만 값을 반환하도록 서버 쪽에서 강제한다.</li>
+      </ol>
+    </section>
+
+    <section id="sec-5">
+      <h2>5. 개발 과정 (타임라인)</h2>
+      <ol>
+        <li><strong>기획 검토</strong>: PRD/디자인 시안 분석 후 단계별 구현으로 방향 결정.</li>
+        <li><strong>기술 스택 확정</strong>: 1인 모드·QR 랜덤 매칭·교사 세션 분리·무로그인 식별이라는 요구사항을 놓고 Supabase/MongoDB/Firebase/Neon을 비교해 Supabase로 결정. 학급 세션(랜덤 매칭)과 친구 초대(1:1)를 별도 시스템으로 만들지 않고, <code>capacity</code> 값(0=무제한, 2=친구초대)만 다른 동일한 "세션" 모델로 통합해 복잡도를 낮췄다.</li>
+        <li><strong>Phase 0 — 프로젝트 셋업</strong>: 폴더 구조, README, <code>.gitignore</code> 초기화.</li>
+        <li><strong>Phase 1 — 테마 시스템 &amp; 메인 화면</strong>: 파스텔톤/모던 클린 CSS 변수 체계, 드롭다운 테마 전환.</li>
+        <li><strong>Phase 2 — 닉네임 &amp; 로컬 식별</strong>: <code>localStorage</code> 기반 익명 <code>player_id</code>(uuid) + 닉네임.</li>
+        <li><strong>Phase 3 — 혼자 연습하기(vs AI)</strong>: 판정 로직, 난이도별 AI(쉬움=랜덤, 보통=부분 힌트, 어려움=제약 전파 최적 추론). 이후 시도 횟수를 8~10회에서 10~20회로 확장하고, 양쪽 다 실패했을 때 문구를 "실패" 대신 "무승부예요!" 톤으로 완화.</li>
+        <li><strong>디자인 반영</strong>: 별도로 준비된 <code>design-reference/</code> 목업을 적절한 수준에서 실제 앱에 반영.</li>
+        <li><strong>Phase 4 — Supabase 세션/매칭</strong>: <code>sessions</code>/<code>session_players</code>/<code>rooms</code> 테이블, 6자리 코드+QR 발급, <code>match_waiting_players()</code>로 대기열 2명씩 랜덤 매칭. 이후 QR 클릭 시 확대 모달과 클릭 가능한 접속 링크를 추가.</li>
+        <li><strong>Phase 5 — 실시간 게임 진행</strong>: 턴 동기화, 30초(최초 20초에서 상향) 제한 시간, 시간 초과 자동 스킵, 4스트라이크 승리/양쪽 실패 시 무승부, 상대 이탈 25초 후 부전승, 종료 후 재대결. <code>match_results</code> 테이블에 학급별 집계용 결과 기록 시작.</li>
+        <li><strong>Phase 6 — 리더보드</strong>: <code>match_results</code>를 teacher_id 기준으로 집계, 3전 이상만 랭킹 노출, 마지막으로 참여한 학급을 기본으로 보여주는 방식.</li>
+        <li><strong>UI/UX 반복 개선</strong>: 공격 기록 시도 번호, 결과 화면 트로피/컨페티, 상대 정답·시도 횟수 공개, 교사용 방 설정(턴 시간/시도 횟수) 메뉴, 현재 시도 번째 표시, "세션"→"방" 용어 통일, 앱 타이틀을 "홈런 숫자야구(Strike Four)"로 통일, 공격 기록을 <code>[3S][1B]</code> 색상 배지로 교체.</li>
+        <li><strong>Phase 7 — QA &amp; 배포</strong>: 방 코드 1시간 만료, 코드 중복 시 자동 재시도, 네트워크/연결 오류 토스트 안내, QR 확대 모달 반응형 크기 수정. <code>poguni/strike-four</code> 저장소에 git으로 초기 커밋 후 푸시, GitHub Pages로 배포.</li>
+      </ol>
+    </section>
+
+    <section id="sec-6">
+      <h2>6. 주요 의사결정과 이유</h2>
+      <ul>
+        <li><strong>학급 세션과 친구 초대를 하나의 테이블/로직으로 통합</strong>: 별도 시스템을 만들면 매칭 로직이 두 배로 늘어나므로, <code>capacity</code> 필드 하나로 분기해 코드 중복 없이 두 모드를 지원했다.</li>
+        <li><strong>판정 로직을 클라이언트가 아닌 DB 함수 안에 둠</strong>: 무로그인 구조에서는 클라이언트 요청을 신뢰할 수 없으므로, 스트라이크/볼 계산과 승패 판정을 전부 <code>submit_guess()</code> SQL 함수 내부에서 처리해 조작 가능성을 원천 차단했다.</li>
+        <li><strong>연습 모드를 "레이스 형식"(양쪽 다 비밀번호를 갖고 번갈아 공격)으로 해석</strong>: PRD 문구가 다소 모호해 이 부분은 가정임을 사용자에게 명시적으로 알리고 진행했다.</li>
+        <li><strong>하드 난이도 AI에 후보 샘플링 도입</strong>: 완전 탐색 방식이 턴마다 최대 500ms 이상 걸리는 성능 문제를 발견해, 후보 풀을 150개로 샘플링하는 방식으로 74ms까지 줄이면서도 평균 공략 횟수는 거의 그대로 유지했다.</li>
+        <li><strong>교사 방 설정을 QR 화면에서 바로 수정 가능하게 함</strong>: 설정값은 매칭이 일어나는 순간에 적용되므로, 별도의 "사전 설정 화면"을 만들지 않고 QR이 보이는 화면에서 바로 바꿀 수 있게 해 화면 수를 늘리지 않았다.</li>
+        <li><strong>공격 기록을 <code>[3S][1B]</code> 배지로 교체</strong>: 원래 "3스트라이크 1볼" 문구가 모바일 폭에서 2줄로 줄바꿈되어 답답하다는 피드백을 받아, 짧고 시각적으로 구분되는 배지 형태로 바꿨다.</li>
+      </ul>
+    </section>
+
+    <section id="sec-7">
+      <h2>7. 문제 해결 기록</h2>
+      <ul>
+        <li><strong>CSS Grid 오버플로우로 인한 가로 스크롤</strong>: <code>.attack-board</code>가 그리드 아이템의 기본 <code>min-width: auto</code> 특성 때문에 공격 기록 글씨를 키우자 박스 밖으로 넘쳐 페이지에 가로 스크롤이 생겼다. <code>min-width: 0</code>을 추가하고 텍스트에 <code>overflow-wrap: anywhere</code>를 줘서 해결했다.</li>
+        <li><strong>QR 확대 모달이 좁은 화면에서 잘림</strong>: 모달의 QR 이미지가 320px 고정 크기였는데, 오버레이·카드·QR박스 여백을 다 빼면 360px 폭 화면에서는 232px밖에 남지 않아 넘쳤다. <code>window.innerWidth</code> 기준으로 크기를 동적으로 계산하도록 수정했다.</li>
+        <li><strong>하드 난이도 AI 성능 문제</strong>: 사용자가 보고하기 전에 Node.js로 직접 타이밍을 재보다가 발견하고, 후보 샘플링으로 해결했다.</li>
+        <li><strong>RLS가 적용된 DELETE의 함정</strong>: anon 키로 DELETE를 호출하면 HTTP 204(성공처럼 보임)가 오지만, RLS 정책이 없으면 실제로는 0건이 지워진다. 매번 실제 행 상태를 재조회해서 검증하는 방식으로 테스트 신뢰성을 높였다.</li>
+        <li><strong>셸 따옴표 문제</strong>: curl로 JSON 페이로드를 테스트할 때 중첩 따옴표가 깨지는 문제가 있어, 임시 파일에 JSON을 쓰고 <code>--data-binary @file</code>로 넘기는 방식으로 우회했다.</li>
+        <li><strong>작업 중 실수로 전체 Node 프로세스 종료</strong>: 테스트 서버를 끄려다 <code>taskkill /F /IM node.exe /T</code>로 MCP 서버(Playwright 등)까지 함께 죽인 적이 있다. 이후로는 포트/부모PID를 정확히 찾아 그 프로세스만 종료하는 방식으로 바꿨고, Playwright MCP는 이후 세션에서도 재연결되지 않아 이 프로젝트의 UI 테스트는 줄곧 사용자의 실제 브라우저 확인에 의존했다.</li>
+      </ul>
+    </section>
+
+    <section id="sec-8">
+      <h2>8. 보안/성능 고려사항</h2>
+      <ul>
+        <li><strong><code>room_secrets</code> 테이블</strong>: RLS는 켜져 있지만 정책이 하나도 없어 anon 키로는 절대 조회 불가. 오직 <code>submit_guess()</code>, <code>get_room_reveal()</code> 함수 내부에서만 접근.</li>
+        <li><strong><code>match_results</code> 테이블</strong>: SELECT는 누구나 가능(리더보드 집계용)하지만 INSERT 정책이 없어 <code>finish_room()</code> 내부에서만 기록 가능 — 클라이언트가 가짜 승리 기록을 직접 끼워 넣을 수 없다.</li>
+        <li><strong><code>sessions.turn_seconds</code> / <code>max_attempts</code></strong>: 컬럼 단위 GRANT로 이 두 컬럼만 anon UPDATE를 허용하고, <code>capacity = 0</code>(학급 방)인 경우로 RLS를 제한해 다른 컬럼(코드, teacher_id 등) 조작을 막았다.</li>
+        <li><strong>anon 키 공개 커밋</strong>: <code>supabase-config.js</code>에 anon(publishable) 키를 그대로 커밋했다. 이 키는 원래 공개되도록 설계된 키이고, 실제 접근 통제는 RLS와 SECURITY DEFINER 함수가 담당하므로 안전하다고 판단했다.</li>
+        <li><strong><code>get_advisors</code> 보안 점검</strong>: 모든 <code>SECURITY DEFINER</code> 함수에 <code>set search_path = public</code>을 명시해 경고를 해소했고, "anon이 SECURITY DEFINER 함수를 호출할 수 있다"는 경고는 무로그인 설계상 의도된 것으로 확인했다.</li>
+      </ul>
+    </section>
+
+    <section id="sec-9">
+      <h2>9. 테스트 및 검증</h2>
+      <p>브라우저 자동화 도구(Playwright 등)가 세션 중 연결이 끊긴 이후 복구되지 않아, 검증은 아래 두 트랙을 병행했다.</p>
+      <ol>
+        <li><strong>백엔드 로직</strong>: <code>execute_sql</code>/anon 키 curl 호출로 매칭·판정·설정 반영·코드 만료·리더보드 집계·상대 정답 공개(<code>get_room_reveal</code>) 등을 실제 값으로 직접 검증하고, 테스트 데이터는 매번 정리했다.</li>
+        <li><strong>실제 사용자 테스트</strong>: 각 Phase마다 사용자가 직접 2개의 브라우저 탭/실제 기기로 매칭·대전·재접속·이탈 시나리오를 확인하고 결과를 알려주는 방식으로 진행했다.</li>
+      </ol>
+    </section>
+
+    <section id="sec-10">
+      <h2>10. 배포</h2>
+      <ul>
+        <li>저장소: <a href="https://github.com/poguni/strike-four" target="_blank" rel="noopener noreferrer">github.com/poguni/strike-four</a></li>
+        <li>배포 URL: <a href="https://poguni.github.io/strike-four/" target="_blank" rel="noopener noreferrer">poguni.github.io/strike-four</a></li>
+        <li>배포 방식: 저장소 루트의 <code>index.html</code>을 소스로 하는 GitHub Pages (<code>main</code> 브랜치, <code>/root</code>).</li>
+      </ul>
+    </section>
+
+    <section id="sec-11">
+      <h2>11. 알려진 한계</h2>
+      <ul>
+        <li>로그인이 없어 같은 학생이 다른 기기/브라우저로 접속하면 별도의 새 사용자로 집계된다(전적·리더보드 모두).</li>
+        <li>친구 초대 세션은 <code>teacher_id</code>가 없어 어떤 학급 리더보드에도 집계되지 않는다.</li>
+        <li>방 코드는 1시간 뒤 신규 참가만 막을 뿐, 오래된 세션 행 자체를 정리(삭제)하지는 않는다.</li>
+        <li>대기 인원이 홀수일 때 마지막 1명의 처리 방식은 아직 별도 UX가 없다(계속 대기 상태로 남음).</li>
+        <li>UI 회귀 테스트가 전부 수동(사용자 확인)에 의존하고 있어 자동화된 스크린샷/E2E 테스트가 없다.</li>
+      </ul>
+    </section>
+
+    <section id="sec-12">
+      <h2>12. 향후 개선 아이디어 / 업데이트 계획</h2>
+      <h3><span class="badge">다음에 하면 좋을 것</span></h3>
+      <ul>
+        <li>학급 세션 대기 인원이 홀수일 때의 처리 방식 확정(예: AI와 임시 연습 후 재편입 안내)</li>
+        <li>리더보드 집계 기간 옵션(전체 누적 vs 주간/월간 리셋)</li>
+        <li>닉네임 중복·부적절어 필터링</li>
+        <li>부전승 대기 시간(현재 25초 고정)을 교사가 조절할 수 있게 하기</li>
+        <li>같은 상대와 연속으로 재매칭되지 않도록 하는 옵션</li>
+      </ul>
+      <h3><span class="badge">여유 있으면</span></h3>
+      <ul>
+        <li>혼자 연습 승패도(별도 지표로) 기록에 반영할지 여부 결정</li>
+        <li>힌트 난이도 조절(예: 저학년용 "자리까지 알려주는" 쉬운 모드)</li>
+        <li>방 코드가 오래되면 실제로 행을 정리하는 배치/주기 작업</li>
+      </ul>
+      <h3><span class="badge">아이디어 수준 (버전 2 이후)</span></h3>
+      <ul>
+        <li>반 전체가 참가하는 토너먼트/리그전</li>
+        <li>전자칠판용 교사 모니터(리더보드 대형 화면) 뷰</li>
+        <li>난이도별 랭킹 분리</li>
+        <li>자동화된 UI 회귀 테스트(Playwright 등 재연결 후)</li>
+      </ul>
+    </section>
+
+  </main>
+</div>
+<script>
+  const links = document.querySelectorAll('nav.sidebar a');
+  const sections = [...links].map((a) => document.querySelector(a.getAttribute('href')));
+  const setActive = (id) => links.forEach((a) => a.classList.toggle('active', a.getAttribute('href') === '#' + id));
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => { if (entry.isIntersecting) setActive(entry.target.id); });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  sections.forEach((el) => el && observer.observe(el));
+</script>
+</body>
+</html>
