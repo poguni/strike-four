@@ -19,6 +19,7 @@
 
 ## 배포 (GitHub Pages)
 
+- 배포 URL: https://poguni.github.io/strike-four/
 - 사이트 소스는 저장소 **루트**의 `index.html`이다. GitHub Pages 설정 시 소스를 `main` 브랜치의 `/ (root)`로 지정한다 (`docs/` 폴더는 기획 문서 전용이라 Pages 소스로 사용하지 않음).
 - 설정 경로: 저장소 Settings → Pages → Source에서 브랜치 `main`, 폴더 `/ (root)` 선택
 
@@ -49,6 +50,14 @@ design-reference/   # 최종 디자인 시안 HTML 목업(모바일/PC × 파스
   - `get_room_reveal`: 대전이 끝난(`status = 'finished'`) 방에 한해서만 양쪽의 정답과 시도 횟수를 반환한다. 끝나지 않은 방에 대해 호출하면 예외를 던져, 진행 중인 대전에서는 절대 상대 정답을 알아낼 수 없다
   - `sessions.turn_seconds` / `sessions.max_attempts`: 교사가 학급 방 화면에서 조정하는 턴 시간(20/30/40초)·시도 횟수(10~20회). `sessions` 테이블은 이 두 컬럼에 한해서만(컬럼 단위 GRANT) anon 키의 UPDATE를 허용하고, `capacity = 0`(학급 방)인 경우만 RLS로 허용한다 — 코드, teacher_id 등 다른 컬럼은 여전히 수정 불가
 
+## 비기능/예외 처리 (Phase 7)
+
+- **방 코드 만료**: 생성된 지 1시간이 지난 방 코드로는 새로 참가할 수 없다(`session.js`의 `SESSION_EXPIRY_MS`). 이미 매칭되어 대전 중인 플레이어는 영향받지 않는다.
+- **방 코드 충돌 재시도**: 6자리 코드가 우연히 중복되면(`23505`) 최대 5회까지 새 코드로 자동 재시도한다(`createSession`).
+- **네트워크/연결 안내**: 브라우저 `online`/`offline` 이벤트, Supabase Realtime 채널의 `CHANNEL_ERROR`/`TIMED_OUT` 상태, RPC 호출 실패(입력 제출, 재대결 등) 시 화면 하단에 토스트 안내(`showToast`, `app.js`)가 뜬다 — 실패해도 빈 화면으로 멈추지 않는다.
+- **QR 모달 반응형**: 확대 QR 크기를 `window.innerWidth` 기준으로 계산해 360px 폭 화면에서도 모달 밖으로 잘리지 않는다.
+- **학급 간 격리**: 매칭(`match_waiting_players`)·리더보드(`match_results`) 모두 `session_id`/`teacher_id`로 스코프되어, 서로 다른 교사가 동시에 세션을 열어도 매칭·랭킹이 섞이지 않음을 실제 테스트로 확인했다.
+
 ## 진행 상황
 
 - [x] Phase 0: 프로젝트 셋업
@@ -58,4 +67,4 @@ design-reference/   # 최종 디자인 시안 HTML 목업(모바일/PC × 파스
 - [x] Phase 4: Supabase 연동 — 학급 세션 생성 & 랜덤 매칭
 - [x] Phase 5: 실시간 게임 진행 (턴 동기화 & 판정)
 - [x] Phase 6: 리더보드 / 랭킹 (학급 단위)
-- [ ] Phase 7: `docs/IMPLEMENTATION_PROMPTS.md` 참고
+- [x] Phase 7: QA(반응형/예외처리/방 코드 만료) & GitHub Pages 배포
