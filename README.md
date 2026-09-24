@@ -46,7 +46,7 @@ design-reference/   # 최종 디자인 시안 HTML 목업(모바일/PC × 파스
 - `supabase-config.js`에 프로젝트 URL과 **publishable(anon) 키**가 들어있다. 이 키는 공개적으로 노출되도록 설계된 키이고(RLS로 접근 범위를 통제), 빌드 과정이 없는 GitHub Pages 배포 특성상 어차피 배포된 JS에 그대로 포함되므로 `.gitignore` 처리하지 않고 커밋했다.
 - 실제 데이터 보안은 Supabase의 Row Level Security(RLS)와, 매칭·판정처럼 원자성/정합성이 중요한 쓰기 작업을 처리하는 `SECURITY DEFINER` 함수들이 담당한다. 테이블에 대한 직접 UPDATE/DELETE는 anon 키로 거의 허용되지 않는다.
   - `match_waiting_players` / `leave_waiting_player` / `rejoin_lobby`: 세션 대기열·매칭 (Phase 4)
-  - `submit_guess` / `skip_turn` / `forfeit_room`: 1:1 대전 진행(`finish_room`은 이 함수들 안에서만 호출되며 anon 키로 직접 실행할 수 없다). 한 선수가 연속 3번 시간 초과하면 자동 몰수패 처리되고, 상대가 최근 20초 안에 움직였다면 `forfeit_room`은 부전승을 인정하지 않는다. 상대의 비밀번호(`room_secrets` 테이블)는 RLS 정책이 아예 없어 anon 키로는 절대 조회할 수 없고, 오직 `submit_guess` 함수 내부에서만 판정에 사용된다 (Phase 5)
+  - `submit_guess` / `skip_turn` / `forfeit_room`: 1:1 대전 진행(`finish_room`은 이 함수들 안에서만 호출되며 anon 키로 직접 실행할 수 없다). 제한 시간이 지나면 `submit_guess`가 입력을 거부하고 `skip_turn`이 턴을 상대에게 넘긴다(상대 화면이 요청하고, 내 화면도 3초 뒤 스스로 요청). 한 선수가 연속 3번 시간 초과하면 자동 몰수패 처리되고, 상대가 최근 20초 안에 움직였다면 `forfeit_room`은 부전승을 인정하지 않는다. 상대의 비밀번호(`room_secrets` 테이블)는 RLS 정책이 아예 없어 anon 키로는 절대 조회할 수 없고, 오직 `submit_guess` 함수 내부에서만 판정에 사용된다 (Phase 5)
   - `match_results`: `finish_room()`이 대전 종료 시마다 teacher_id·닉네임과 함께 기록하는 결과 테이블. SELECT는 누구나 가능(집계용)하지만 INSERT 정책은 없어 `finish_room()` 내부에서만 기록되고, 조작된 승리 기록을 직접 끼워 넣을 수 없다 (Phase 6)
   - `get_room_reveal`: 대전이 끝난(`status = 'finished'`) 방에 한해서만 양쪽의 정답과 시도 횟수를 반환한다. 끝나지 않은 방에 대해 호출하면 예외를 던져, 진행 중인 대전에서는 절대 상대 정답을 알아낼 수 없다
   - `sessions.turn_seconds` / `sessions.max_attempts`: 교사가 학급 방 화면에서 조정하는 턴 시간(20/30/40/50초)·시도 횟수(10~20회). `sessions` 테이블은 이 두 컬럼에 한해서만(컬럼 단위 GRANT) anon 키의 UPDATE를 허용하고, `capacity = 0`(학급 방)인 경우만 RLS로 허용한다 — 코드, teacher_id 등 다른 컬럼은 여전히 수정 불가

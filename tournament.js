@@ -3,7 +3,7 @@
 
 const T_ADMIN_KEY = 'numball_tournament_admin'; // 교사: { sessionId, token }
 const T_CURRENT_KEY = 'numball_current_tournament'; // 학생: { sessionId }
-const T_MIN_PLAYERS = { league: 3, tournament: 4 };
+const T_MIN_PLAYERS = { league: 3, tournament: 3 };
 const T_MINUTES_PER_ROUND = 5;
 
 const T_FORMAT_LABEL = { league: '리그', tournament: '토너먼트' };
@@ -561,6 +561,10 @@ function renderTournament() {
   const finishBtn = tById('tournament-finish-btn');
   startBtn.hidden = t.status !== 'recruiting';
   startBtn.disabled = state.players.length < T_MIN_PLAYERS[t.format] || state.busy;
+  startBtn.textContent =
+    state.players.length < T_MIN_PLAYERS[t.format]
+      ? `참가 마감 및 대회 시작 (${T_MIN_PLAYERS[t.format] - state.players.length}명 더 필요)`
+      : '참가 마감 및 대회 시작';
   const currentRound = state.matches.filter((m) => m.round === t.current_round);
   const roundDone = currentRound.length > 0 && currentRound.every((m) => m.status === 'done');
   nextBtn.hidden = t.status !== 'running';

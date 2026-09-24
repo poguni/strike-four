@@ -60,7 +60,7 @@ function renderRoomGuessDisplay() {
     slot.textContent = roomState.currentDigits[i] ?? '';
   });
 
-  const canPlay = roomState.isMyTurn && roomState.status !== 'finished';
+  const canPlay = roomState.isMyTurn && roomState.status !== 'finished' && !roomState.timedOut;
   document.querySelectorAll('#room-keypad [data-digit]').forEach((btn) => {
     btn.disabled = !canPlay || roomState.currentDigits.includes(btn.dataset.digit);
   });
@@ -121,19 +121,31 @@ function startTurnTimer() {
     return;
   }
   const deadline = new Date(roomState.turnDeadline).getTime();
+  let lastSkipRequestAt = 0;
 
   function tick() {
     const remainingMs = deadline - Date.now();
     const remainingSec = Math.max(0, Math.ceil(remainingMs / 1000));
     timerEl.textContent = `${remainingSec}초`;
-    if (remainingMs <= 0) {
-      stopTurnTimer();
-      if (!roomState.isMyTurn) {
-        // 상대 턴이 시간 초과됨 -> 내가 대신 스킵을 요청(둘 다 지켜보고 있으면 먼저 도착한 요청이 처리됨)
-        supabaseClient
-          .rpc('skip_turn', { p_room_id: roomState.roomId, p_expected_turn_player: roomState.turnPlayerId })
-          .catch((error) => console.error(error));
-      }
+    if (remainingMs > 0) return;
+
+    if (roomState.isMyTurn && !roomState.timedOut) {
+      // 내 제한 시간이 끝났으면 더 이상 입력하지 못하게 막는다.
+      roomState.timedOut = true;
+      roomState.currentDigits = [];
+      renderRoomGuessDisplay();
+    }
+    // 시간 초과된 턴을 넘겨 달라고 서버에 요청한다. 상대 턴이면 즉시, 내 턴이면 상대 화면이 처리할 시간을 3초 준 뒤.
+    // 서버가 아직 마감 전이라고 판단하면(시계 차이) 무시하므로 3초마다 다시 요청한다.
+    const overdueMs = -remainingMs;
+    const grace = roomState.isMyTurn ? 3000 : 0;
+    if (overdueMs >= grace && Date.now() - lastSkipRequestAt >= 3000) {
+      lastSkipRequestAt = Date.now();
+      supabaseClient
+        .rpc('skip_turn', { p_room_id: roomState.roomId, p_expected_turn_player: roomState.turnPlayerId })
+        .then(({ error }) => {
+          if (error) console.error(error);
+        });
     }
   }
 
@@ -146,7 +158,9 @@ function scheduleForfeitCheck() {
   forfeitTimeoutHandle = setTimeout(() => {
     supabaseClient
       .rpc('forfeit_room', { p_room_id: roomState.roomId, p_remaining_player_id: getPlayerId() })
-      .catch((error) => console.error(error));
+      .then(({ error }) => {
+        if (error) console.error(error);
+      });
   }, 25000);
 }
 
@@ -188,6 +202,7 @@ function applyRoomState(room) {
   roomState.forfeited = room.forfeited;
   roomState.tournamentMatchId = room.tournament_match_id || null;
   roomState.isMyTurn = room.turn_player_id === roomState.myId;
+  roomState.timedOut = false;
 
   document.getElementById('room-turn-indicator').textContent = roomState.isMyTurn ? '내 차례' : '상대 차례';
   renderRoomGuessDisplay();
@@ -270,11 +285,12 @@ async function submitMyGuess(guess) {
   roomState.currentDigits = [];
   renderRoomGuessDisplay();
   try {
-    await supabaseClient.rpc('submit_guess', {
+    const { error } = await supabaseClient.rpc('submit_guess', {
       p_room_id: roomState.roomId,
       p_player_id: getPlayerId(),
       p_guess: guess,
     });
+    if (error) throw error;
     // 결과 반영은 attempts/rooms에 대한 Realtime 구독으로 양쪽 화면에 동일하게 들어온다.
   } catch (error) {
     console.error(error);
