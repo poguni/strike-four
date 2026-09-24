@@ -12,7 +12,7 @@ function getLastTeacherId() {
   return localStorage.getItem(LAST_TEACHER_KEY);
 }
 
-function aggregateResults(rows) {
+function summarizeResults(rows) {
   const byPlayer = new Map();
 
   rows.forEach((row) => {
@@ -35,11 +35,14 @@ function aggregateResults(rows) {
     }
   });
 
-  return Array.from(byPlayer.values())
-    .map((entry) => {
-      const total = entry.wins + entry.losses + entry.draws;
-      return { ...entry, total, winRate: total ? entry.wins / total : 0 };
-    })
+  return Array.from(byPlayer.values()).map((entry) => {
+    const total = entry.wins + entry.losses + entry.draws;
+    return { ...entry, total, winRate: total ? entry.wins / total : 0 };
+  });
+}
+
+function aggregateResults(rows) {
+  return summarizeResults(rows)
     .filter((entry) => entry.total >= RANKING_MIN_GAMES)
     .sort((a, b) => b.winRate - a.winRate || b.wins - a.wins)
     .slice(0, RANKING_LIMIT);
@@ -54,6 +57,34 @@ async function fetchLeaderboard(teacherId) {
     .order('created_at', { ascending: true });
   if (error) throw error;
   return aggregateResults(data || []);
+}
+
+function formatRecord(entry) {
+  return `${entry.wins}승 ${entry.losses}패${entry.draws ? ` ${entry.draws}무` : ''}`;
+}
+
+// 메인 화면 전적: 랭킹과 같은 방식(같은 학급, 같은 집계)으로 내 기록만 계산한다.
+async function refreshMyRecord() {
+  const el = document.getElementById('profile-record');
+  const teacherId = getLastTeacherId();
+  if (!teacherId) {
+    el.textContent = formatRecord({ wins: 0, losses: 0, draws: 0 });
+    return;
+  }
+  try {
+    const { data, error } = await supabaseClient
+      .from('match_results')
+      .select('player_id, nickname, result, attempts_used')
+      .eq('teacher_id', teacherId)
+      .eq('player_id', getPlayerId())
+      .not('nickname', 'is', null)
+      .order('created_at', { ascending: true });
+    if (error) throw error;
+    const mine = summarizeResults(data || [])[0];
+    el.textContent = formatRecord(mine || { wins: 0, losses: 0, draws: 0 });
+  } catch (error) {
+    console.error(error);
+  }
 }
 
 function createRankingRow(entry, index, myId) {
@@ -73,7 +104,7 @@ function createRankingRow(entry, index, myId) {
 
   const record = document.createElement('span');
   record.className = 'ranking-record';
-  record.textContent = `${entry.wins}승 ${entry.losses}패${entry.draws ? ` ${entry.draws}무` : ''}`;
+  record.textContent = formatRecord(entry);
 
   const rate = document.createElement('span');
   rate.className = 'ranking-rate';
@@ -136,6 +167,7 @@ async function openRanking() {
 function initLeaderboard() {
   document.getElementById('btn-leaderboard').addEventListener('click', openRanking);
   document.getElementById('ranking-back-btn').addEventListener('click', goHome);
+  document.addEventListener('identity-ready', refreshMyRecord);
 }
 
 document.addEventListener('DOMContentLoaded', initLeaderboard);

@@ -50,6 +50,7 @@ function showScreen(id) {
   // 브라우저 뒤로 가기 지원: 메인이 아닌 화면은 히스토리 항목 1개로 묶는다.
   const inSubScreen = Boolean(history.state && history.state.subScreen);
   if (id === 'screen-main') {
+    if (typeof refreshMyRecord === 'function') refreshMyRecord();
     if (inSubScreen) history.back();
   } else if (!inSubScreen) {
     history.pushState({ subScreen: true }, '');
@@ -141,6 +142,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (!getNickname()) {
     openNicknameModal();
   } else {
-    document.dispatchEvent(new CustomEvent('identity-ready'));
+    // 다른 스크립트(session/room/leaderboard)의 DOMContentLoaded 핸들러가 리스너를 등록한 뒤에 발생시킨다.
+    setTimeout(() => document.dispatchEvent(new CustomEvent('identity-ready')), 0);
   }
 });
