@@ -50,8 +50,10 @@ function cleanupTournament() {
 /* ---------- 허브(대회 만들기 / 이어가기) ---------- */
 
 function updateFormatUi() {
-  document.querySelectorAll('.format-btn').forEach((btn) => {
-    btn.classList.toggle('selected', btn.dataset.format === selectedTournamentFormat);
+  document.querySelectorAll('.t-format-card').forEach((btn) => {
+    const on = btn.dataset.format === selectedTournamentFormat;
+    btn.classList.toggle('selected', on);
+    btn.setAttribute('aria-checked', String(on));
   });
   tById('tournament-format-desc').textContent = T_FORMAT_DESC[selectedTournamentFormat];
   tById('tournament-league-rounds-row').hidden = selectedTournamentFormat !== 'league';
@@ -70,22 +72,21 @@ async function refreshResumeBox() {
 
   const { data, error } = await supabaseClient
     .from('tournaments')
-    .select('status, format')
+    .select('id, status, format')
     .eq('session_id', target.sessionId)
     .maybeSingle();
   if (error) return; // 네트워크 오류로 관리 토큰/참가 정보를 지우지 않는다
-  if (!data) {
+  if (!data || data.status === 'cancelled' || (data.status === 'finished' && target.role === 'student')) {
     localStorage.removeItem(admin ? T_ADMIN_KEY : T_CURRENT_KEY);
     return;
   }
-  if (data.status === 'finished' && target.role === 'student') {
-    localStorage.removeItem(T_CURRENT_KEY);
-    return;
-  }
-  pendingTournamentResume = target;
+  pendingTournamentResume = { ...target, tournament: data };
   const who = target.role === 'teacher' ? '내가 만든' : '참가 중인';
-  tById('tournament-resume-text').textContent =
-    `${who} ${T_FORMAT_LABEL[data.format]} 대회가 ${data.status === 'finished' ? '끝났어요' : '진행 중이에요'}.`;
+  const stateText = { recruiting: '참가자를 모으는 중이에요', running: '진행 중이에요', finished: '끝났어요' }[data.status];
+  tById('tournament-resume-text').textContent = `${who} ${T_FORMAT_LABEL[data.format]} 대회가 ${stateText}.`;
+  const discardBtn = tById('tournament-discard-btn');
+  discardBtn.hidden = target.role !== 'teacher';
+  discardBtn.textContent = data.status === 'finished' ? '결과 닫고 새로 만들기' : '대회 취소하고 새로 만들기';
   box.hidden = false;
 }
 
@@ -95,6 +96,33 @@ function openTournamentHub() {
   tById('tournament-create-btn').disabled = false;
   updateFormatUi();
   refreshResumeBox();
+}
+
+async function discardTeacherTournament() {
+  const target = pendingTournamentResume;
+  if (!target || target.role !== 'teacher') return;
+  const finished = target.tournament.status === 'finished';
+  if (!finished && !window.confirm('진행 중인 대회를 취소할까요? 경기 중인 학생 화면도 종료돼요.')) return;
+  const button = tById('tournament-discard-btn');
+  button.disabled = true;
+  try {
+    if (!finished) {
+      const { error } = await supabaseClient.rpc('cancel_tournament', {
+        p_tournament_id: target.tournament.id,
+        p_token: target.token,
+      });
+      if (error) throw error;
+    }
+    localStorage.removeItem(T_ADMIN_KEY);
+    tById('tournament-resume-box').hidden = true;
+    pendingTournamentResume = null;
+    showToast(finished ? '이전 대회를 닫았어요. 새 대회를 만들 수 있어요.' : '대회를 취소했어요. 새 대회를 만들 수 있어요.');
+  } catch (error) {
+    console.error(error);
+    showToast('대회를 취소하지 못했어요. 잠시 후 다시 시도해주세요.');
+  } finally {
+    button.disabled = false;
+  }
 }
 
 async function createTournament() {
@@ -195,7 +223,7 @@ async function openTournament({ role, sessionId, token, silent }) {
     else tById('tournament-status').textContent = '대회 정보를 불러오지 못했어요. 메인으로 돌아가 다시 시도해주세요.';
     return;
   }
-  if (silent && role === 'student' && state.tournament.status === 'finished') {
+  if (silent && role === 'student' && ['finished', 'cancelled'].includes(state.tournament.status)) {
     localStorage.removeItem(T_CURRENT_KEY);
     cleanupTournament();
     return;
@@ -366,7 +394,10 @@ function tEstimate(t, n) {
 function tMatchStateText(m, names) {
   const winner = names.get(m.winner_id);
   if (m.status === 'done') {
-    if (m.result_type === 'bye') return m.player_b ? `부전승: ${winner || '-'}` : '이번 라운드는 쉬어요 (+1점)';
+    if (m.result_type === 'bye') {
+      if (m.player_b) return `부전승: ${winner || '-'}`;
+      return tState.tournament.format === 'league' ? '이번 라운드는 쉬어요 (+1점)' : '부전승으로 진출';
+    }
     if (m.result_type === 'draw') return '무승부';
     const suffix = { forfeit: ' (몰수)', admin: ' (교사 처리)', coin: ' (동전 던지기)' }[m.result_type] || '';
     return `승: ${winner || '-'}${suffix}`;
@@ -378,18 +409,38 @@ function tMatchStateText(m, names) {
 
 /* ---------- 화면 그리기 ---------- */
 
+function tPillKind(m) {
+  if (m.status === 'active') return 'live';
+  if (m.status === 'tiebreak') return 'tie';
+  if (m.status === 'done') return 'done';
+  return 'wait';
+}
+
 function tBuildMatchRow(m, names, withActions) {
   const myId = getPlayerId();
-  const li = tEl('li', 'tournament-match' + (m.player_a === myId || m.player_b === myId ? ' is-mine' : ''));
+  const mine = m.player_a === myId || m.player_b === myId;
+  const li = tEl('li', `t-match is-${m.status}${mine ? ' is-mine' : ''}`);
   const nameA = names.get(m.player_a) || '?';
   const nameB = m.player_b ? names.get(m.player_b) || '?' : null;
-  li.appendChild(tEl('span', 'tournament-match-names', nameB ? `${nameA} vs ${nameB}` : `${nameA} (부전)`));
-  li.appendChild(tEl('span', 'tournament-match-state', tMatchStateText(m, names)));
+  const decided = m.status === 'done' && m.result_type !== 'bye';
+
+  const head = tEl('div', 't-match-head');
+  const sides = tEl('div', 't-match-sides');
+  sides.appendChild(tEl('span', 't-side' + (decided && m.winner_id === m.player_a ? ' is-winner' : ''), nameA));
+  if (nameB) {
+    sides.appendChild(tEl('span', 't-vs', 'VS'));
+    sides.appendChild(tEl('span', 't-side' + (decided && m.winner_id === m.player_b ? ' is-winner' : ''), nameB));
+  } else {
+    sides.appendChild(tEl('span', 't-vs', '부전'));
+  }
+  head.appendChild(sides);
+  head.appendChild(tEl('span', `t-pill t-pill--${tPillKind(m)}`, tMatchStateText(m, names)));
+  li.appendChild(head);
 
   if (withActions && m.status !== 'done' && m.player_b) {
-    const actions = tEl('div', 'tournament-match-actions');
+    const actions = tEl('div', 't-match-actions');
     const add = (label, action, player) => {
-      const btn = tEl('button', 'mini-btn', label);
+      const btn = tEl('button', 't-mini', label);
       btn.type = 'button';
       btn.addEventListener('click', () => resolveMatch(m, action, player, label));
       actions.appendChild(btn);
@@ -405,18 +456,22 @@ function tBuildMatchRow(m, names, withActions) {
 
 function tRenderStandings(container, standings) {
   const myId = getPlayerId();
-  const table = tEl('table', 'standings');
+  const medals = ['🥇', '🥈', '🥉'];
+  const wrap = tEl('div', 't-card t-table-wrap');
+  const table = tEl('table', 't-table');
   const head = tEl('tr');
   ['순위', '이름', '승점', '승', '무', '패'].forEach((label) => head.appendChild(tEl('th', '', label)));
   table.appendChild(head);
   standings.forEach((row, index) => {
     const tr = tEl('tr', row.id === myId ? 'is-me' : '');
-    tr.appendChild(tEl('td', '', String(index + 1)));
+    tr.appendChild(tEl('td', 'rank', medals[index] || String(index + 1)));
     tr.appendChild(tEl('td', 'name', row.removed ? `${row.name} (제외)` : row.name));
-    [row.pts, row.w, row.d, row.l].forEach((value) => tr.appendChild(tEl('td', '', String(value))));
+    tr.appendChild(tEl('td', 'pts', String(row.pts)));
+    [row.w, row.d, row.l].forEach((value) => tr.appendChild(tEl('td', '', String(value))));
     table.appendChild(tr);
   });
-  container.appendChild(table);
+  wrap.appendChild(table);
+  container.appendChild(wrap);
 }
 
 function tRenderBracket(container, names) {
@@ -429,9 +484,9 @@ function tRenderBracket(container, names) {
   Array.from(rounds.keys())
     .sort((a, b) => a - b)
     .forEach((round) => {
-      const box = tEl('div', 'bracket-round');
-      box.appendChild(tEl('h4', '', tRoundName(round, t.total_rounds)));
-      const list = tEl('ul', 'tournament-matches');
+      const box = tEl('section', 't-round');
+      box.appendChild(tEl('h4', 't-round-title', tRoundName(round, t.total_rounds)));
+      const list = tEl('ul', 't-matches');
       rounds.get(round).forEach((m) => list.appendChild(tBuildMatchRow(m, names, false)));
       box.appendChild(list);
       container.appendChild(box);
@@ -466,6 +521,7 @@ function tBuildChampionLines(names, standings) {
 function tStudentStatus(t, names, standings) {
   const myId = getPlayerId();
   const me = tState.players.find((p) => p.player_id === myId);
+  if (t.status === 'cancelled') return '선생님이 대회를 취소했어요. 메인으로 돌아가 다음 대회를 기다려요.';
   if (t.status === 'recruiting') {
     return `선생님이 대회를 시작하길 기다리고 있어요. 지금까지 ${tState.players.length}명이 참가했어요.`;
   }
@@ -502,6 +558,7 @@ function tTeacherStatus(t) {
     return `참가자 ${n}명 (최소 ${min}명)${estimate ? ` · ${estimate}` : ''}`;
   }
   if (t.status === 'finished') return '대회가 끝났어요.';
+  if (t.status === 'cancelled') return '대회가 취소됐어요. 새 대회를 만들 수 있어요.';
   const round = tState.matches.filter((m) => m.round === t.current_round);
   const done = round.filter((m) => m.status === 'done').length;
   const allDone = round.length > 0 && done === round.length;
@@ -535,7 +592,9 @@ function renderTournament() {
   const t = state.tournament;
   const isTeacher = state.role === 'teacher';
   const names = tNameMap();
-  const showBoardData = t.status !== 'recruiting';
+  const showBoardData = t.status === 'running' || t.status === 'finished' || (t.status === 'cancelled' && state.matches.length > 0);
+  tById('tournament-icon').textContent = t.format === 'league' ? '📊' : '🏆';
+  if (!isTeacher && t.status === 'cancelled') localStorage.removeItem(T_CURRENT_KEY);
   const standings = t.format === 'league' && showBoardData ? computeStandings(state.players, state.matches) : [];
 
   tById('tournament-title').textContent = `${T_FORMAT_LABEL[t.format]} 대회`;
@@ -555,7 +614,10 @@ function renderTournament() {
   }
 
   // 교사 버튼
-  tById('tournament-teacher-actions').hidden = !isTeacher || t.status === 'finished';
+  const isOver = t.status === 'finished' || t.status === 'cancelled';
+  tById('tournament-teacher-actions').hidden = !isTeacher || isOver;
+  tById('tournament-new-actions').hidden = !isTeacher || !isOver;
+  tById('tournament-cancel-btn').hidden = isOver;
   const startBtn = tById('tournament-start-btn');
   const nextBtn = tById('tournament-next-btn');
   const finishBtn = tById('tournament-finish-btn');
@@ -576,9 +638,9 @@ function renderTournament() {
   const myActive = state.matches.find(
     (m) => m.status === 'active' && m.room_id && (m.player_a === myId || m.player_b === myId)
   );
-  tById('tournament-student-actions').hidden = isTeacher || t.status === 'recruiting';
+  tById('tournament-student-actions').hidden = isTeacher || t.status === 'recruiting' || t.status === 'cancelled';
   tById('tournament-goto-room-btn').hidden = !myActive;
-  tById('tournament-practice-btn').hidden = Boolean(myActive) || t.status === 'finished';
+  tById('tournament-practice-btn').hidden = Boolean(myActive) || isOver;
 
   // 우승/순위 안내
   const championBox = tById('tournament-champion');
@@ -586,7 +648,14 @@ function renderTournament() {
   if (t.status === 'finished') {
     const lines = tBuildChampionLines(names, standings);
     championBox.hidden = lines.length === 0;
-    lines.forEach(([label, name]) => championBox.appendChild(tEl('p', 'podium-line', `${label}  ${name || '-'}`)));
+    lines.forEach(([label, name], index) => {
+      const [medal, ...rest] = label.split(' ');
+      const row = tEl('div', 't-podium-row' + (index === 0 ? ' is-first' : ''));
+      row.appendChild(tEl('span', 't-podium-medal', medal));
+      row.appendChild(tEl('span', 't-podium-label', rest.join(' ')));
+      row.appendChild(tEl('strong', 't-podium-name', name || '-'));
+      championBox.appendChild(row);
+    });
     const iAmFirst = t.format === 'tournament' ? t.champion_player_id === myId : standings[0] && standings[0].id === myId;
     if (!isTeacher && iAmFirst && !state.celebrated) {
       state.celebrated = true;
@@ -623,11 +692,12 @@ function renderTournament() {
   const activeCount = state.players.filter((p) => p.status !== 'removed').length;
   tById('tournament-players-summary').textContent = `참가자 ${activeCount}명`;
   state.players.forEach((p) => {
-    const li = tEl('li', 'tournament-player' + (p.status === 'removed' ? ' is-removed' : ''));
+    const li = tEl('li', 't-chip' + (p.status === 'removed' ? ' is-removed' : ''));
     li.appendChild(tEl('span', '', p.nickname || '이름 없음'));
-    if (isTeacher && p.status !== 'removed' && t.status !== 'finished') {
-      const btn = tEl('button', 'mini-btn', '제외');
+    if (isTeacher && p.status !== 'removed' && !isOver) {
+      const btn = tEl('button', 't-chip-x', '✕');
       btn.type = 'button';
+      btn.setAttribute('aria-label', `${p.nickname || '참가자'} 제외`);
       btn.addEventListener('click', () => removePlayer(p));
       li.appendChild(btn);
     }
@@ -700,7 +770,7 @@ async function resumeStudentTournamentOnLoad() {
   const hasSavedRoom = Boolean(getSavedRoom());
   const { data, error } = await supabaseClient.from('tournaments').select('status').eq('session_id', current.sessionId).maybeSingle();
   if (error) return;
-  if (!data || data.status === 'finished') {
+  if (!data || ['finished', 'cancelled'].includes(data.status)) {
     localStorage.removeItem(T_CURRENT_KEY);
     return;
   }
@@ -712,7 +782,7 @@ function initTournament() {
   tById('tournament-hub-back-btn').addEventListener('click', goHome);
   tById('tournament-back-btn').addEventListener('click', goHome);
 
-  document.querySelectorAll('.format-btn').forEach((btn) => {
+  document.querySelectorAll('.t-format-card').forEach((btn) => {
     btn.addEventListener('click', () => {
       selectedTournamentFormat = btn.dataset.format;
       updateFormatUi();
@@ -742,6 +812,18 @@ function initTournament() {
       callTournamentAdmin('finish_tournament');
     }
   });
+
+  tById('tournament-cancel-btn').addEventListener('click', () => {
+    if (window.confirm('대회를 취소할까요? 진행 중인 경기가 모두 종료되고, 학생들도 대회에서 나가게 돼요.')) {
+      callTournamentAdmin('cancel_tournament');
+    }
+  });
+  tById('tournament-new-btn').addEventListener('click', () => {
+    localStorage.removeItem(T_ADMIN_KEY);
+    cleanupTournament();
+    openTournamentHub();
+  });
+  tById('tournament-discard-btn').addEventListener('click', discardTeacherTournament);
 
   tById('tournament-goto-room-btn').addEventListener('click', () => {
     const myId = getPlayerId();

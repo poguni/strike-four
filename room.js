@@ -298,15 +298,23 @@ async function submitMyGuess(guess) {
   }
 }
 
-// 토너먼트 무승부: 연장전 안내 또는 동전 던지기 결과를 결과 화면에 반영한다.
-async function annotateTournamentDraw(trophy, title, detail) {
+// 대회 경기 결과 보정: 교사가 대회를 취소/종료해 끝난 경기, 무승부 연장전 안내, 동전 던지기 결과를 반영한다.
+async function annotateTournamentResult(trophy, title, detail, isDraw) {
   try {
     const { data: match } = await supabaseClient
       .from('tournament_matches')
-      .select('status, result_type, winner_id')
+      .select('status, result_type, winner_id, tournaments(status)')
       .eq('id', roomState.tournamentMatchId)
       .maybeSingle();
     if (!match) return;
+    const tournamentStatus = match.tournaments && match.tournaments.status;
+    if (tournamentStatus === 'cancelled' || (tournamentStatus === 'finished' && match.status !== 'done')) {
+      trophy.textContent = tournamentStatus === 'cancelled' ? '🛑' : '🏁';
+      title.textContent = tournamentStatus === 'cancelled' ? '선생님이 대회를 취소했어요' : '대회가 끝나서 경기가 종료됐어요';
+      detail.textContent = '이 경기는 기록되지 않아요.';
+      return;
+    }
+    if (!isDraw) return;
     if (match.status === 'tiebreak') {
       title.textContent = '무승부! 연장전으로 결판내요';
       detail.textContent = `${detail.textContent} 잠시 후 연장전이 자동으로 시작돼요.`.trim();
@@ -384,7 +392,7 @@ async function showRoomResult() {
     detail.textContent = amWinner ? '내가 먼저 상대의 숫자를 맞혔어요.' : '상대가 먼저 내 숫자를 맞혔어요.';
   }
 
-  if (inTournament && isDraw) await annotateTournamentDraw(trophy, title, detail);
+  if (inTournament) await annotateTournamentResult(trophy, title, detail, isDraw);
 }
 
 async function tryResumeRoom() {
