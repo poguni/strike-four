@@ -1155,14 +1155,12 @@ body {
 }
 
 @media (min-width: 600px) {
-  .t-actions,
-  .t-banner-actions {
+  .t-actions {
     flex-direction: row;
     flex-wrap: wrap;
   }
 
-  .t-actions .btn,
-  .t-banner-actions .btn {
+  .t-actions .btn {
     flex: 1 1 200px;
   }
 }
@@ -1192,8 +1190,16 @@ body {
 
 .t-banner-actions {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
   gap: 10px;
+}
+
+/* 안내 상자 안의 버튼은 글자 크기에 맞춰 작게 (세로로 늘어나지 않도록 flex 늘림 없음) */
+.t-banner-actions .btn {
+  flex: 0 0 auto;
+  min-height: 44px;
+  padding: 10px 18px;
+  font-size: 16px;
 }
 
 /* 참가 코드 카드 */
