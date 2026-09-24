@@ -220,7 +220,7 @@ body {
   align-items: center;
   justify-content: center;
   font-family: var(--font-display);
-  font-size: 18px;
+  font-size: 20px;
   color: var(--avatar-text);
   background: var(--avatar-bg);
   border-radius: 50%;
@@ -234,13 +234,13 @@ body {
 .profile-name {
   margin: 0;
   font-family: var(--font-display);
-  font-size: 16px;
+  font-size: 19px;
 }
 
 .profile-record {
   margin: 3px 0 0;
   color: var(--text-muted);
-  font-size: 12.5px;
+  font-size: 14.5px;
 }
 
 .profile-name-row {
@@ -298,13 +298,13 @@ body {
 
 .action-title {
   font-family: var(--font-display);
-  font-size: 15.5px;
+  font-size: 18px;
 }
 
 .action-subtitle {
   display: none;
   font-family: var(--font-body);
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 400;
   color: var(--text-muted);
 }
