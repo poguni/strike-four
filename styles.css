@@ -584,7 +584,7 @@ body {
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 0;
 }
 
 .attack-log li {
@@ -592,7 +592,7 @@ body {
   align-items: center;
   flex-wrap: wrap;
   gap: 4px 8px;
-  padding: 6px 4px;
+  padding: 3px 4px;
   font-size: 15px;
   border-bottom: var(--list-divider, 1px dashed rgba(0, 0, 0, 0.08));
 }
@@ -624,11 +624,11 @@ body {
   align-items: center;
   justify-content: center;
   min-width: 30px;
-  padding: 2px 6px;
+  padding: 1px 6px;
   font-family: var(--font-display);
   font-size: 13px;
   font-weight: 700;
-  line-height: 1.5;
+  line-height: 1.4;
   border-radius: var(--radius-pill);
 }
 
