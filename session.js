@@ -164,6 +164,7 @@ function subscribeTeacherWaitCount(sessionId) {
 async function startCreateClassSession() {
   showScreen('screen-create-session');
   document.getElementById('create-session-title').textContent = '학급 방';
+  document.getElementById('create-session-icon').textContent = '🎯';
   document.getElementById('create-session-status').textContent = '방을 만드는 중...';
   document.getElementById('create-session-code').textContent = '------';
   document.getElementById('create-session-counts').textContent = '';
@@ -195,6 +196,7 @@ async function startFriendInvite() {
     currentSession = session;
 
     document.getElementById('create-session-title').textContent = '친구 초대';
+    document.getElementById('create-session-icon').textContent = '🤝';
     document.getElementById('create-session-status').textContent =
       '친구에게 QR이나 코드를 보여주세요. 친구가 들어오면 바로 시작돼요.';
     document.getElementById('create-session-counts').textContent = '';

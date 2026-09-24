@@ -707,7 +707,6 @@ body {
 }
 
 /* ===== Phase 4: 세션/매칭 화면 ===== */
-#screen-create-session,
 #screen-join-session,
 #screen-lobby,
 #screen-room-result {
@@ -715,7 +714,6 @@ body {
   text-align: center;
 }
 
-#screen-create-session .btn,
 #screen-join-session .btn,
 #screen-lobby .btn,
 #screen-room-result .btn {
@@ -1533,4 +1531,29 @@ body {
 .t-matches:empty,
 #tournament-board:empty {
   display: none;
+}
+
+.t-counts {
+  margin: 0;
+  padding: 12px 16px;
+  font-size: 17px;
+  font-weight: 700;
+  text-align: center;
+  color: var(--text-primary);
+  background: var(--t-soft);
+  border-radius: 16px;
+}
+
+.t-counts:empty {
+  display: none;
+}
+
+.t-settings-block {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.t-settings-block .t-section-title {
+  margin-top: 0;
 }

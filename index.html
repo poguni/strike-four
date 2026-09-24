@@ -184,43 +184,60 @@
       <button type="button" class="btn btn-secondary" id="practice-home-btn">메인으로</button>
     </section>
 
-    <section class="screen" id="screen-create-session" hidden>
-      <h2 id="create-session-title">학급 방</h2>
-      <p id="create-session-status">방을 만드는 중...</p>
-      <div class="room-settings" id="create-session-settings" hidden>
-        <div class="room-settings-row">
-          <label for="setting-turn-seconds">턴 시간</label>
-          <select id="setting-turn-seconds">
-            <option value="20">20초</option>
-            <option value="30" selected>30초</option>
-            <option value="40">40초</option>
-            <option value="50">50초</option>
-          </select>
+    <section class="screen t-screen" id="screen-create-session" hidden>
+      <header class="t-header">
+        <span class="t-header-icon" id="create-session-icon" aria-hidden="true">🎯</span>
+        <div class="t-header-text">
+          <h2 id="create-session-title">학급 방</h2>
+          <p id="create-session-status" class="t-lead">방을 만드는 중...</p>
         </div>
-        <div class="room-settings-row">
-          <label for="setting-max-attempts">시도 횟수</label>
-          <select id="setting-max-attempts">
-            <option value="10" selected>10회</option>
-            <option value="11">11회</option>
-            <option value="12">12회</option>
-            <option value="13">13회</option>
-            <option value="14">14회</option>
-            <option value="15">15회</option>
-            <option value="16">16회</option>
-            <option value="17">17회</option>
-            <option value="18">18회</option>
-            <option value="19">19회</option>
-            <option value="20">20회</option>
-          </select>
-        </div>
-        <p class="hint">설정은 앞으로 새로 매칭되는 대전부터 적용돼요.</p>
+      </header>
+
+      <div class="t-card t-recruit">
+        <p class="t-eyebrow">참가 코드</p>
+        <p class="session-code-display"><span id="create-session-code">------</span></p>
+        <div id="create-session-qr" class="qr-box" role="button" tabindex="0" aria-label="QR 코드 크게 보기"></div>
+        <p class="qr-hint">QR을 누르면 화면 가운데에 크게 보여요</p>
+        <a id="create-session-link" class="session-link" href="#" target="_blank" rel="noopener noreferrer">-</a>
       </div>
-      <p class="session-code-display"><span id="create-session-code">------</span></p>
-      <div id="create-session-qr" class="qr-box" role="button" tabindex="0" aria-label="QR 코드 크게 보기"></div>
-      <p class="qr-hint">QR을 클릭하면 화면 가운데에 크게 보여요</p>
-      <a id="create-session-link" class="session-link" href="#" target="_blank" rel="noopener noreferrer">-</a>
-      <p id="create-session-counts" class="session-counts"></p>
-      <button type="button" class="btn btn-secondary" id="create-session-back-btn">메인으로</button>
+
+      <p id="create-session-counts" class="t-counts"></p>
+
+      <div id="create-session-settings" class="t-settings-block" hidden>
+        <h3 class="t-section-title">게임 설정</h3>
+        <div class="t-card t-settings">
+          <div class="t-row">
+            <label for="setting-turn-seconds">턴 시간</label>
+            <select id="setting-turn-seconds">
+              <option value="20">20초</option>
+              <option value="30" selected>30초</option>
+              <option value="40">40초</option>
+              <option value="50">50초</option>
+            </select>
+          </div>
+          <div class="t-row">
+            <label for="setting-max-attempts">시도 횟수</label>
+            <select id="setting-max-attempts">
+              <option value="10" selected>10회</option>
+              <option value="11">11회</option>
+              <option value="12">12회</option>
+              <option value="13">13회</option>
+              <option value="14">14회</option>
+              <option value="15">15회</option>
+              <option value="16">16회</option>
+              <option value="17">17회</option>
+              <option value="18">18회</option>
+              <option value="19">19회</option>
+              <option value="20">20회</option>
+            </select>
+          </div>
+        </div>
+        <p class="t-desc t-note">설정은 앞으로 새로 매칭되는 대전부터 적용돼요.</p>
+      </div>
+
+      <div class="t-actions">
+        <button type="button" class="btn btn-secondary" id="create-session-back-btn">메인으로</button>
+      </div>
     </section>
 
     <div id="qr-modal" class="modal-overlay" hidden>
