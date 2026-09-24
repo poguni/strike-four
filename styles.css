@@ -289,6 +289,11 @@ body {
   color: var(--accent-primary-text);
 }
 
+.action-icon svg {
+  width: 30px;
+  height: 30px;
+}
+
 .action-text {
   display: flex;
   flex-direction: column;
