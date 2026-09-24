@@ -186,6 +186,7 @@ function applyRoomState(room) {
   roomState.turnDeadline = room.turn_deadline;
   roomState.winnerPlayerId = room.winner_player_id;
   roomState.forfeited = room.forfeited;
+  roomState.tournamentMatchId = room.tournament_match_id || null;
   roomState.isMyTurn = room.turn_player_id === roomState.myId;
 
   document.getElementById('room-turn-indicator').textContent = roomState.isMyTurn ? '내 차례' : '상대 차례';
@@ -241,6 +242,9 @@ async function loadRoomAndSubscribe(roomId) {
 }
 
 function enterRoom(sessionId, roomId, opponentNickname) {
+  if (roomState && roomState.roomId === roomId && roomState.status === 'active' && !document.getElementById('screen-room-game').hidden) {
+    return; // 이미 이 방에 들어와 있음 (중복 입장 방지)
+  }
   cleanupRoomRealtime();
   roomState = {
     sessionId,
@@ -278,6 +282,29 @@ async function submitMyGuess(guess) {
   }
 }
 
+// 토너먼트 무승부: 연장전 안내 또는 동전 던지기 결과를 결과 화면에 반영한다.
+async function annotateTournamentDraw(trophy, title, detail) {
+  try {
+    const { data: match } = await supabaseClient
+      .from('tournament_matches')
+      .select('status, result_type, winner_id')
+      .eq('id', roomState.tournamentMatchId)
+      .maybeSingle();
+    if (!match) return;
+    if (match.status === 'tiebreak') {
+      title.textContent = '무승부! 연장전으로 결판내요';
+      detail.textContent = `${detail.textContent} 잠시 후 연장전이 자동으로 시작돼요.`.trim();
+    } else if (match.result_type === 'coin') {
+      const won = match.winner_id === roomState.myId;
+      trophy.textContent = won ? '🏆' : '😅';
+      title.textContent = won ? '동전 던지기로 승리! 🎉' : '동전 던지기로 아쉽게 패배';
+      if (won) fireConfetti();
+    }
+  } catch (error) {
+    console.error(error);
+  }
+}
+
 async function showRoomResult() {
   cleanupRoomRealtime();
   clearCurrentRoom();
@@ -302,6 +329,11 @@ async function showRoomResult() {
   detail.textContent = '결과를 불러오는 중...';
   showScreen('screen-room-result');
   if (amWinner) fireConfetti();
+
+  const inTournament = Boolean(roomState.tournamentMatchId);
+  document.getElementById('room-rematch-btn').hidden = inTournament;
+  document.getElementById('room-tournament-btn').hidden = !inTournament;
+  if (inTournament) ensureTournamentSubscription();
 
   if (roomState.forfeited) {
     detail.textContent = amWinner
@@ -335,6 +367,8 @@ async function showRoomResult() {
     console.error(error);
     detail.textContent = amWinner ? '내가 먼저 상대의 숫자를 맞혔어요.' : '상대가 먼저 내 숫자를 맞혔어요.';
   }
+
+  if (inTournament && isDraw) await annotateTournamentDraw(trophy, title, detail);
 }
 
 async function tryResumeRoom() {
@@ -385,6 +419,7 @@ function initRoom() {
     }
   });
 
+  document.getElementById('room-tournament-btn').addEventListener('click', returnToTournament);
   document.getElementById('room-result-home-btn').addEventListener('click', goHome);
 
   document.addEventListener('identity-ready', tryResumeRoom);

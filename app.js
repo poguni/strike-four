@@ -129,10 +129,11 @@ document.addEventListener('DOMContentLoaded', () => {
       input.focus();
       return;
     }
+    const isFirstNickname = !getNickname();
     setNickname(value);
     renderProfile();
     closeNicknameModal();
-    document.dispatchEvent(new CustomEvent('identity-ready'));
+    if (isFirstNickname) document.dispatchEvent(new CustomEvent('identity-ready'));
   });
 
   document.getElementById('edit-nickname-btn').addEventListener('click', () => {

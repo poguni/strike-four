@@ -8,6 +8,7 @@ const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLI
 let currentSession = null; // { id, code, capacity, teacher_id }
 let lobbyChannel = null;
 let teacherChannel = null;
+let joiningByCode = false; // 주소의 ?code= 로 들어와 자동 참가를 진행 중인지
 
 function getTeacherId() {
   let id = localStorage.getItem(TEACHER_ID_KEY);
@@ -290,19 +291,29 @@ async function attemptJoinByCode(code) {
     await joinSession(session.id, playerId, nickname);
     setLastTeacherId(session.teacher_id);
     statusEl.textContent = '';
+    if (session.mode && session.mode !== 'free') {
+      openTournament({ role: 'student', sessionId: session.id });
+      return;
+    }
     enterLobby(session);
   } catch (error) {
     console.error(error);
-    statusEl.textContent = '입장에 실패했어요. 다시 시도해주세요.';
+    statusEl.textContent =
+      error && /tournament already started/.test(error.message || '')
+        ? '이미 시작된 대회예요. 선생님께 문의해주세요.'
+        : '입장에 실패했어요. 다시 시도해주세요.';
   }
 }
 
 function goHome() {
+  if (typeof cleanupTournament === 'function') cleanupTournament();
   cleanupRealtime();
   cleanupRoomRealtime();
   clearCurrentRoom();
   currentSession = null;
   showScreen('screen-main');
+  // 대회 참가 중이면 메인에 있어도 다음 라운드에 자동 입장할 수 있게 조용히 구독을 유지한다.
+  if (typeof ensureTournamentSubscription === 'function') ensureTournamentSubscription();
 }
 
 function initSession() {
@@ -361,6 +372,9 @@ function initSession() {
     const params = new URLSearchParams(window.location.search);
     const code = params.get('code');
     if (code) {
+      joiningByCode = true;
+      // 새로고침 때 같은 코드로 다시 참가하지 않도록 주소에서 코드를 지운다(히스토리 상태는 유지).
+      history.replaceState(history.state, '', window.location.pathname);
       showScreen('screen-join-session');
       document.getElementById('join-session-code-input').value = code;
       attemptJoinByCode(code);

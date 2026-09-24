@@ -26,6 +26,7 @@
   --accent-blue-bg: #F5FBFF;   --accent-blue-border: #BFE3FF; --accent-blue-text: #5B87B0;
   --accent-pink-bg: #FFF6FA;   --accent-pink-border: #FFD9EC; --accent-pink-text: #C1709A;
   --accent-yellow-bg: #FFFBEA; --accent-yellow-border: #FFE29A; --accent-yellow-text: #B8860B;
+  --accent-green-bg: #F2FFF7;  --accent-green-border: #B6EBCB; --accent-green-text: #3F8F63;
 
   --pill-success-bg: #D8F5E3; --pill-success-text: #4E9C72;
   --list-divider: dashed 1.5px #E7D9F0;
@@ -329,6 +330,11 @@ body {
   color: var(--accent-pink-text, var(--accent-blue));
 }
 
+.btn--green .action-icon {
+  background: var(--accent-green-bg, var(--accent-blue-tint-bg));
+  color: var(--accent-green-text, var(--accent-blue));
+}
+
 .btn--yellow .action-icon {
   background: var(--accent-yellow-bg, var(--accent-blue-tint-bg));
   color: var(--accent-yellow-text, var(--accent-blue));
@@ -423,6 +429,12 @@ body {
   border: var(--card-border, 2px solid var(--accent-yellow-border, var(--accent-blue)));
 }
 
+.btn-secondary.btn--green {
+  background: var(--accent-green-bg, var(--card-bg));
+  color: var(--accent-green-text, var(--text-primary));
+  border: var(--card-border, 2px solid var(--accent-green-border, var(--accent-blue)));
+}
+
 @media (min-width: 720px) {
   .screen:not([hidden]) {
     max-width: 640px;
@@ -438,10 +450,12 @@ body {
   .menu-buttons {
     flex-direction: row;
     flex-wrap: wrap;
+    justify-content: center;
   }
 
+  /* 카드 5장: 860~1199px는 3+2 배치(카드 크기 고정), 1200px 이상은 한 줄 */
   .menu-buttons .btn {
-    flex: 1 1 220px;
+    flex: 0 1 calc(33.333% - 10px);
     flex-direction: column;
     align-items: center;
     justify-content: center;
@@ -467,6 +481,16 @@ body {
   .profile-card {
     max-width: 480px;
     margin: 0 auto;
+  }
+}
+
+@media (min-width: 1200px) {
+  #screen-main.screen:not([hidden]) {
+    max-width: 1240px;
+  }
+
+  .menu-buttons .btn {
+    flex: 1 1 220px;
   }
 }
 
@@ -909,4 +933,156 @@ body {
 .ranking-best {
   font-size: 11px;
   color: var(--accent-yellow-text, var(--text-muted));
+}
+
+
+/* ===== 토너먼트/리그전 ===== */
+.format-btn {
+  flex: 1 1 40%;
+}
+
+.format-btn.selected {
+  background: var(--accent-primary-grad, var(--accent-primary-bg));
+  color: var(--accent-primary-text);
+  border-color: transparent;
+}
+
+.tournament-resume {
+  padding: 12px 14px;
+  border-radius: var(--radius-lg, 16px);
+  background: var(--card-bg);
+  border: var(--card-border, none);
+  box-shadow: var(--card-shadow);
+}
+
+.tournament-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tournament-champion {
+  padding: 16px;
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: 22px;
+  border-radius: var(--radius-lg, 16px);
+  background: var(--card-bg);
+  border: var(--card-border, none);
+  box-shadow: var(--card-shadow);
+}
+
+.tournament-champion .podium-line {
+  margin: 4px 0;
+  font-size: 17px;
+}
+
+.tournament-matches,
+.tournament-players {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tournament-match {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  padding: 10px 12px;
+  font-size: 16px;
+  border-radius: 12px;
+  background: var(--card-bg);
+  border: var(--card-border, 1px solid rgba(0, 0, 0, 0.06));
+}
+
+.tournament-match.is-mine {
+  outline: 2px solid var(--accent-yellow-border, var(--accent-blue, #4F46E5));
+}
+
+.tournament-match-names {
+  flex: 1 1 160px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-weight: 700;
+}
+
+.tournament-match-state {
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.tournament-match-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  width: 100%;
+}
+
+.mini-btn {
+  padding: 6px 10px;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--text-primary);
+  background: transparent;
+  border: 1px solid var(--text-muted);
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.tournament-players-box summary {
+  cursor: pointer;
+  padding: 8px 0;
+  color: var(--text-muted);
+}
+
+.tournament-player {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: var(--card-bg);
+}
+
+.tournament-player.is-removed {
+  opacity: 0.5;
+  text-decoration: line-through;
+}
+
+.standings {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 15px;
+}
+
+.standings th,
+.standings td {
+  padding: 6px 4px;
+  text-align: center;
+  border-bottom: var(--list-divider, 1px solid rgba(0, 0, 0, 0.08));
+}
+
+.standings td.name {
+  text-align: left;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.standings tr.is-me td {
+  background: rgba(255, 226, 154, 0.35);
+}
+
+.bracket-round {
+  margin-bottom: 12px;
+}
+
+.bracket-round h4 {
+  margin: 0 0 6px;
+  color: var(--text-muted);
+  font-size: 14px;
 }

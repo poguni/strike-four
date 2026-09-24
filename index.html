@@ -95,6 +95,15 @@
             <span class="action-subtitle">우리 반 순위를 확인해요</span>
           </span>
         </button>
+        <button type="button" class="btn btn-secondary btn--green" id="btn-tournament">
+          <span class="action-icon" aria-hidden="true">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none"><path d="M3 5h5v4H3zM3 15h5v4H3zM16 10h5v4h-5z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8 7h3v10H8m3-5h5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </span>
+          <span class="action-text">
+            <span class="action-title">토너먼트/리그전</span>
+            <span class="action-subtitle">반 전체가 함께하는 대회예요</span>
+          </span>
+        </button>
       </nav>
     </main>
 
@@ -185,6 +194,7 @@
             <option value="20">20초</option>
             <option value="30" selected>30초</option>
             <option value="40">40초</option>
+            <option value="50">50초</option>
           </select>
         </div>
         <div class="room-settings-row">
@@ -287,6 +297,7 @@
       <h2 id="room-result-title">결과</h2>
       <p id="room-result-detail"></p>
       <button type="button" class="btn btn-primary" id="room-rematch-btn">다시 대결하기</button>
+      <button type="button" class="btn btn-primary" id="room-tournament-btn" hidden>대회 화면으로</button>
       <button type="button" class="btn btn-secondary" id="room-result-home-btn">메인으로</button>
     </section>
 
@@ -295,6 +306,107 @@
       <p id="ranking-status" class="hint">불러오는 중...</p>
       <ol id="ranking-list" class="ranking-list"></ol>
       <button type="button" class="btn btn-secondary" id="ranking-back-btn">메인으로</button>
+    </section>
+
+    <section class="screen" id="screen-tournament-hub" hidden>
+      <h2>토너먼트/리그전</h2>
+      <p class="hint">선생님이 대회 방을 만들면, 학생들은 '방 참가하기'에서 코드를 입력해 참가해요.</p>
+
+      <div id="tournament-resume-box" class="tournament-resume" hidden>
+        <p id="tournament-resume-text"></p>
+        <button type="button" class="btn btn-primary" id="tournament-resume-btn">대회 화면으로 가기</button>
+      </div>
+
+      <h3>새 대회 만들기 (교사용)</h3>
+      <div class="difficulty-options">
+        <button type="button" class="btn btn-secondary format-btn selected" data-format="tournament">토너먼트</button>
+        <button type="button" class="btn btn-secondary format-btn" data-format="league">리그</button>
+      </div>
+      <p class="hint" id="tournament-format-desc"></p>
+
+      <div class="room-settings">
+        <div class="room-settings-row">
+          <label for="tournament-turn-seconds">턴 시간</label>
+          <select id="tournament-turn-seconds">
+            <option value="20">20초</option>
+            <option value="30" selected>30초</option>
+            <option value="40">40초</option>
+            <option value="50">50초</option>
+          </select>
+        </div>
+        <div class="room-settings-row">
+          <label for="tournament-max-attempts">시도 횟수</label>
+          <select id="tournament-max-attempts">
+            <option value="10" selected>10회</option>
+            <option value="11">11회</option>
+            <option value="12">12회</option>
+            <option value="13">13회</option>
+            <option value="14">14회</option>
+            <option value="15">15회</option>
+            <option value="16">16회</option>
+            <option value="17">17회</option>
+            <option value="18">18회</option>
+            <option value="19">19회</option>
+            <option value="20">20회</option>
+          </select>
+        </div>
+        <div class="room-settings-row" id="tournament-league-rounds-row" hidden>
+          <label for="tournament-league-rounds">라운드 수</label>
+          <select id="tournament-league-rounds">
+            <option value="" selected>자동 (최대 5)</option>
+            <option value="2">2라운드</option>
+            <option value="3">3라운드</option>
+            <option value="4">4라운드</option>
+            <option value="5">5라운드</option>
+            <option value="6">6라운드</option>
+            <option value="7">7라운드</option>
+            <option value="8">8라운드</option>
+            <option value="9">9라운드</option>
+          </select>
+        </div>
+        <p class="hint">대회가 시작되면 설정은 바꿀 수 없어요.</p>
+      </div>
+      <p id="tournament-hub-status" class="hint"></p>
+      <button type="button" class="btn btn-primary" id="tournament-create-btn">대회 방 만들기</button>
+      <button type="button" class="btn btn-secondary" id="tournament-hub-back-btn">메인으로</button>
+    </section>
+
+    <section class="screen" id="screen-tournament" hidden>
+      <h2 id="tournament-title">대회</h2>
+      <p id="tournament-status" class="hint"></p>
+
+      <div id="tournament-recruit" hidden>
+        <p class="session-code-display"><span id="tournament-code">------</span></p>
+        <div id="tournament-qr" class="qr-box" role="button" tabindex="0" aria-label="QR 코드 크게 보기"></div>
+        <p class="qr-hint">QR을 클릭하면 화면 가운데에 크게 보여요</p>
+        <a id="tournament-link" class="session-link" href="#" target="_blank" rel="noopener noreferrer">-</a>
+      </div>
+
+      <div id="tournament-champion" class="tournament-champion" hidden></div>
+
+      <div id="tournament-teacher-actions" class="tournament-actions" hidden>
+        <button type="button" class="btn btn-primary" id="tournament-start-btn">참가 마감 및 대회 시작</button>
+        <button type="button" class="btn btn-primary" id="tournament-next-btn">다음 라운드 시작</button>
+        <button type="button" class="btn btn-secondary" id="tournament-finish-btn">대회 종료</button>
+      </div>
+
+      <div id="tournament-student-actions" class="tournament-actions" hidden>
+        <button type="button" class="btn btn-primary" id="tournament-goto-room-btn">경기 화면으로 가기</button>
+        <button type="button" class="btn btn-secondary" id="tournament-practice-btn">기다리는 동안 혼자 연습하기</button>
+      </div>
+
+      <h3 id="tournament-matches-title" hidden>이번 라운드 경기</h3>
+      <ul id="tournament-matches" class="tournament-matches"></ul>
+
+      <h3 id="tournament-board-title" hidden></h3>
+      <div id="tournament-board"></div>
+
+      <details id="tournament-players-box" class="tournament-players-box">
+        <summary id="tournament-players-summary">참가자</summary>
+        <ul id="tournament-players" class="tournament-players"></ul>
+      </details>
+
+      <button type="button" class="btn btn-secondary" id="tournament-back-btn">메인으로</button>
     </section>
   </div>
 
@@ -316,5 +428,6 @@
   <script src="session.js"></script>
   <script src="room.js"></script>
   <script src="leaderboard.js"></script>
+  <script src="tournament.js"></script>
 </body>
 </html>
