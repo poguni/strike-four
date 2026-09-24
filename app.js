@@ -46,7 +46,20 @@ function showScreen(id) {
   document.querySelectorAll('.screen').forEach((el) => {
     el.hidden = el.id !== id;
   });
+
+  // 브라우저 뒤로 가기 지원: 메인이 아닌 화면은 히스토리 항목 1개로 묶는다.
+  const inSubScreen = Boolean(history.state && history.state.subScreen);
+  if (id === 'screen-main') {
+    if (inSubScreen) history.back();
+  } else if (!inSubScreen) {
+    history.pushState({ subScreen: true }, '');
+  }
 }
+
+window.addEventListener('popstate', (event) => {
+  if (event.state && event.state.subScreen) return;
+  goHome();
+});
 
 function createResultBadges(strikes, balls) {
   const wrap = document.createElement('span');
