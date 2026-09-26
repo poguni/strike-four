@@ -442,6 +442,10 @@
         <button type="button" class="btn btn-secondary t-danger" id="tournament-cancel-btn">대회 취소</button>
       </div>
 
+      <div id="tournament-board-actions" class="t-actions" hidden>
+        <button type="button" class="btn btn-secondary" id="tournament-board-btn">🖥️ 칠판용 보기</button>
+      </div>
+
       <div id="tournament-new-actions" class="t-actions" hidden>
         <button type="button" class="btn btn-primary" id="tournament-new-btn">새 대회 만들기</button>
       </div>
@@ -466,6 +470,28 @@
         <button type="button" class="btn btn-secondary" id="tournament-back-btn">메인으로</button>
       </div>
     </section>
+  </div>
+
+  <div id="t-board" class="t-board" role="dialog" aria-label="칠판용 대회 보기" hidden>
+    <button type="button" class="t-board-close" id="t-board-close">닫기 (Esc)</button>
+    <header class="t-board-head">
+      <span class="t-board-icon" id="t-board-icon" aria-hidden="true">🏆</span>
+      <div>
+        <h2 id="t-board-title">대회</h2>
+        <p id="t-board-status" class="t-board-status"></p>
+      </div>
+    </header>
+    <div id="t-board-recruit" class="t-board-recruit" hidden>
+      <div id="t-board-qr" class="qr-box"></div>
+      <div class="t-board-recruit-text">
+        <p class="t-eyebrow">참가 코드</p>
+        <p id="t-board-code" class="t-board-code">------</p>
+        <p id="t-board-count" class="t-board-count"></p>
+      </div>
+    </div>
+    <div id="t-board-podium" class="t-podium" hidden></div>
+    <div id="t-board-main" class="t-board-main"></div>
+    <ul id="t-board-chips" class="t-chips"></ul>
   </div>
 
   <div id="nickname-modal" class="modal-overlay" hidden>

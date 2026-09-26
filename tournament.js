@@ -39,6 +39,7 @@ function tById(id) {
 }
 
 function cleanupTournament() {
+  tById('t-board').hidden = true;
   if (tState) {
     if (tState.channel) supabaseClient.removeChannel(tState.channel);
     if (tState.reloadTimer) clearTimeout(tState.reloadTimer);
@@ -587,6 +588,95 @@ function tScheduleTiebreaks() {
   });
 }
 
+function tFillPodium(box, lines) {
+  lines.forEach(([label, name], index) => {
+    const [medal, ...rest] = label.split(' ');
+    const row = tEl('div', 't-podium-row' + (index === 0 ? ' is-first' : ''));
+    row.appendChild(tEl('span', 't-podium-medal', medal));
+    row.appendChild(tEl('span', 't-podium-label', rest.join(' ')));
+    row.appendChild(tEl('strong', 't-podium-name', name || '-'));
+    box.appendChild(row);
+  });
+}
+
+/* ---------- 칠판용 보기 (교사가 전자칠판에 띄우는 읽기 전용 화면) ---------- */
+
+function openBoardView() {
+  if (!tState || tState.role !== 'teacher') return;
+  tState.boardOpen = true;
+  tState.boardQrKey = null;
+  tById('t-board').hidden = false;
+  renderTournament();
+}
+
+function closeBoardView() {
+  if (tState) tState.boardOpen = false;
+  tById('t-board').hidden = true;
+}
+
+// 진행 중 경기의 추측 내용은 불러오지도 보여주지도 않는다(칠판을 보는 학생에게 힌트가 되지 않도록).
+function renderBoardView(names, standings, currentRound) {
+  const state = tState;
+  const t = state.tournament;
+  tById('t-board-icon').textContent = t.format === 'league' ? '📊' : '🏆';
+  const title = tById('t-board-title');
+  title.textContent = `${T_FORMAT_LABEL[t.format]} 대회`;
+  if (state.session && state.session.digits === 3) {
+    title.appendChild(tEl('span', 'digits-badge', '3자리'));
+  }
+  tById('t-board-status').textContent = tTeacherStatus(t);
+
+  // 모집 중: 참가 코드/QR + 참가자
+  const recruiting = t.status === 'recruiting';
+  tById('t-board-recruit').hidden = !recruiting;
+  if (recruiting) {
+    tById('t-board-code').textContent = state.session.code;
+    tById('t-board-count').textContent = `현재 ${state.players.length}명 참가`;
+    if (state.boardQrKey !== state.session.code) {
+      state.boardQrKey = state.session.code;
+      renderQrCode(tById('t-board-qr'), buildJoinUrl(state.session.code), 260);
+    }
+  }
+  const chips = tById('t-board-chips');
+  chips.innerHTML = '';
+  if (recruiting) {
+    state.players.forEach((p) => chips.appendChild(tEl('li', 't-chip', p.nickname || '이름 없음')));
+  }
+
+  // 우승/순위
+  const podium = tById('t-board-podium');
+  podium.innerHTML = '';
+  const finished = t.status === 'finished';
+  const lines = finished ? tBuildChampionLines(names, standings) : [];
+  podium.hidden = lines.length === 0;
+  tFillPodium(podium, lines);
+  if (finished && lines.length && !state.boardCelebrated) {
+    state.boardCelebrated = true;
+    fireConfetti();
+  }
+
+  // 본문: 리그는 이번 라운드 + 순위표, 토너먼트는 대진표
+  const main = tById('t-board-main');
+  main.innerHTML = '';
+  if (t.status !== 'running' && !finished) return;
+  if (t.format === 'league') {
+    if (t.status === 'running') {
+      const box = tEl('section');
+      box.appendChild(tEl('h3', 't-section-title', `라운드 ${t.current_round} 경기`));
+      const list = tEl('ul', 't-matches');
+      currentRound.forEach((m) => list.appendChild(tBuildMatchRow(m, names, false)));
+      box.appendChild(list);
+      main.appendChild(box);
+    }
+    const table = tEl('section');
+    table.appendChild(tEl('h3', 't-section-title', '순위표'));
+    tRenderStandings(table, standings);
+    main.appendChild(table);
+  } else {
+    tRenderBracket(main, names);
+  }
+}
+
 function renderTournament() {
   const state = tState;
   if (!state || !state.tournament) return;
@@ -655,14 +745,7 @@ function renderTournament() {
   if (t.status === 'finished') {
     const lines = tBuildChampionLines(names, standings);
     championBox.hidden = lines.length === 0;
-    lines.forEach(([label, name], index) => {
-      const [medal, ...rest] = label.split(' ');
-      const row = tEl('div', 't-podium-row' + (index === 0 ? ' is-first' : ''));
-      row.appendChild(tEl('span', 't-podium-medal', medal));
-      row.appendChild(tEl('span', 't-podium-label', rest.join(' ')));
-      row.appendChild(tEl('strong', 't-podium-name', name || '-'));
-      championBox.appendChild(row);
-    });
+    tFillPodium(championBox, lines);
     const iAmFirst = t.format === 'tournament' ? t.champion_player_id === myId : standings[0] && standings[0].id === myId;
     if (!isTeacher && iAmFirst && !state.celebrated) {
       state.celebrated = true;
@@ -714,6 +797,9 @@ function renderTournament() {
     tById('tournament-players-box').open = t.status === 'recruiting';
     state.lastStatus = t.status;
   }
+
+  tById('tournament-board-actions').hidden = !isTeacher || t.status === 'cancelled';
+  if (state.boardOpen) renderBoardView(names, standings, currentRound);
 
   tScheduleTiebreaks();
 }
@@ -788,6 +874,11 @@ function initTournament() {
   tById('btn-tournament').addEventListener('click', openTournamentHub);
   tById('tournament-hub-back-btn').addEventListener('click', goHome);
   tById('tournament-back-btn').addEventListener('click', goHome);
+  tById('tournament-board-btn').addEventListener('click', openBoardView);
+  tById('t-board-close').addEventListener('click', closeBoardView);
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && !tById('t-board').hidden) closeBoardView();
+  });
 
   document.querySelectorAll('.t-format-card').forEach((btn) => {
     btn.addEventListener('click', () => {

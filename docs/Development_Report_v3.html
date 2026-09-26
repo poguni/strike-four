@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>홈런 숫자야구(Strike Four) 개발 보고서 v3</title>
+<style>
+  :root { --sidebar-w: 260px; --accent: #4F46E5; --text: #1f2430; --muted: #6b7280; --bg: #ffffff; --panel: #f7f7fb; --border: #e5e7eb; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, "Segoe UI", "Noto Sans KR", sans-serif; color: var(--text); background: var(--bg); line-height: 1.65; }
+  .layout { display: flex; min-height: 100vh; }
+  nav.sidebar { position: sticky; top: 0; align-self: flex-start; width: var(--sidebar-w); flex-shrink: 0; height: 100vh; overflow-y: auto; padding: 24px 16px; background: var(--panel); border-right: 1px solid var(--border); }
+  nav.sidebar h1 { font-size: 15px; margin: 0 0 4px; }
+  nav.sidebar .meta { font-size: 12px; color: var(--muted); margin-bottom: 16px; }
+  nav.sidebar a { display: block; padding: 7px 10px; margin: 2px 0; font-size: 13.5px; color: var(--text); text-decoration: none; border-radius: 8px; }
+  nav.sidebar a:hover { background: #eceafd; }
+  nav.sidebar a.active { background: var(--accent); color: #fff; }
+  main { flex: 1; min-width: 0; padding: 40px 48px; max-width: 860px; }
+  main section { margin-bottom: 48px; scroll-margin-top: 24px; }
+  main h2 { font-size: 22px; border-bottom: 2px solid var(--border); padding-bottom: 8px; }
+  main h3 { font-size: 17px; color: var(--accent); }
+  main table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+  main th, main td { border: 1px solid var(--border); padding: 8px 10px; font-size: 14px; text-align: left; }
+  main code { background: #f1f1f5; padding: 1px 5px; border-radius: 4px; font-size: 0.9em; }
+  main pre { background: #1f2430; color: #eee; padding: 14px; border-radius: 8px; overflow-x: auto; }
+  @media (max-width: 800px) {
+    .layout { flex-direction: column; }
+    nav.sidebar { position: relative; width: 100%; height: auto; border-right: none; border-bottom: 1px solid var(--border); }
+    main { padding: 24px 16px; }
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+  <nav class="sidebar" id="sidebar">
+    <h1>홈런 숫자야구(Strike Four)</h1>
+    <div class="meta">개발 보고서 v3 · 2026-09-26</div>
+    <a href="#sec-1">1. 개요</a>
+    <a href="#sec-2">2. 목표 및 배경</a>
+    <a href="#sec-3">3. 주요 기능</a>
+    <a href="#sec-4">4. 기술 스택 및 아키텍처</a>
+    <a href="#sec-5">5. 개발 과정 (타임라인)</a>
+    <a href="#sec-6">6. 주요 의사결정과 이유</a>
+    <a href="#sec-7">7. 문제 해결 기록</a>
+    <a href="#sec-8">8. 보안/성능 고려사항</a>
+    <a href="#sec-9">9. 테스트 및 검증</a>
+    <a href="#sec-10">10. 배포</a>
+    <a href="#sec-11">11. 알려진 한계</a>
+    <a href="#sec-12">12. 향후 개선 아이디어 / 업데이트 계획</a>
+    <a href="#sec-13">13. 이전 버전(v2) 이후 변경 사항</a>
+  </nav>
+  <main id="content">
+<h1 style="font-size:28px;margin-top:0">홈런 숫자야구(Strike Four) 개발 보고서 (v3)</h1>
+<ul><li>작성일: 2026-09-26</li><li>버전: v3</li><li>이전 버전: v2 (docs/Development_Report_v2.md)</li></ul>
+<section id="sec-1"><h2>1. 개요</h2>
+
+
+<p><strong>홈런 숫자야구(Strike Four)</strong>는 초등학교 교실에서 로그인 없이 바로 즐길 수 있는 숫자야구(불스앤카우) 웹 게임이다. 학생은 이름/닉네임만 입력하면 되고, 혼자 AI와 연습하거나 교사가 띄운 QR코드로 반 친구와 실시간 1:1 대전, 반 전체 토너먼트/리그전을 할 수 있다. v3에서는 실제 초등학생 테스트에서 난이도가 높다는 피드백을 받아 <strong>3자리 숫자 모드</strong>를 추가하고 기본 모드로 삼았다. 대상 사용자는 초등학교 교사와 학생이며, 전자칠판·디벗(태블릿)·스마트폰 등 다양한 화면에서 쓰이는 것을 전제로 한다.</p>
+
+
+</section>
+<section id="sec-2"><h2>2. 목표 및 배경</h2>
+
+<ul><li><strong>핵심 가치</strong>: 회원가입/로그인 장벽 없이, 교사가 QR 하나만 띄우면 반 전체가 즉시 대전에 참여할 수 있게 하는 것.
+</li><li><strong>v3의 목표</strong>: 4자리를 위치까지 맞히는 규칙이 초등학생에게 어렵다는 현장 피드백에 따라, 규칙은 그대로 두고 자릿수만 줄인 쉬운 모드를 제공한다(가능한 조합 수 5,040 → 720).
+</li><li><strong>진행 방식</strong>: 사용자가 구현 전에 <code>/plan</code>으로 "전역 설정 vs 기능별 설정"을 비교해 한 가지를 추천받고, 승인 후 구현했다. 추천 과정에서 코드와 서버 함수를 직접 조사해 처음 제안 일부를 정정했다(아래 6장).
+</li></ul>
+
+</section>
+<section id="sec-3"><h2>3. 주요 기능</h2>
+
+
+<p><strong>이어진 기능</strong></p>
+<ul><li>혼자 연습하기(vs AI, 3단계 난이도, 시도 횟수 10~20회), 친구 초대, 학급 방 만들기(자유 랜덤 매칭), 실시간 1:1 대전(턴 동기화·판정·시간 초과 스킵), 결과 화면, 학급 랭킹, 파스텔/모던 테마.
+</li><li>토너먼트/리그전(교사 운영 도구, 연장전·동전 던지기, 대진표·순위표), 메인 화면 전적, 브라우저 뒤로 가기, 턴 시간 20/30/40/50초.
+</li></ul>
+
+<p><strong>v3에서 추가·변경된 기능</strong></p>
+<ul><li><strong>3자리 숫자 모드</strong>: 규칙은 4자리와 같고 자릿수만 하나 줄었다.
+<ul><li><strong>혼자 연습하기</strong>: 난이도 아래에 "3자리 / 4자리" 토글. 선택은 브라우저에 기억된다.
+</li><li><strong>학급 방 만들기</strong>: 게임 설정에 "숫자 자릿수". 방에 저장되어 학생은 바꿀 수 없다.
+</li><li><strong>토너먼트/리그전</strong>: 대회 설정에 "숫자 자릿수". 시작 후 변경 불가.
+</li><li><strong>표시</strong>: 3자리 방·대기실·대회 제목에 "3자리" 배지.
+</li></ul>
+</li><li><strong>기본값 3자리</strong>: 혼자 연습, 학급 방 만들기, 토너먼트/리그전 모두 기본 선택이 3자리(4자리로 바꿀 수 있음). 친구 초대는 4자리 유지.
+</li><li><strong>메인 화면에는 게임 모드 선택을 두지 않음</strong>: 학생이 바꿀 수 없게 하기 위함.
+</li><li><strong>스플래시 화면 프롬프트 스킬</strong>: 전역 스킬 <code>make-homescreen</code>으로 Nano Banana용 스플래시 화면 이미지 프롬프트를 만들 수 있게 했다(앱 본체에는 아직 반영되지 않음).
+</li></ul>
+
+</section>
+<section id="sec-4"><h2>4. 기술 스택 및 아키텍처</h2>
+
+
+<table><thead><tr><th>영역</th><th>선택</th><th>이유</th></tr></thead><tbody><tr><td>프론트엔드</td><td>바닐라 JS, 빌드 도구 없음</td><td>GitHub Pages에 그대로 배포, 프로젝트 규모상 프레임워크 불필요</td></tr><tr><td>화면 전환</td><td><code>.screen</code> 섹션 + <code>showScreen(id)</code> + History API</td><td>뒤로 가기를 하위 화면 1단계로 묶어 메인으로 복귀</td></tr><tr><td>백엔드/DB</td><td>Supabase(Postgres)</td><td>DB + Realtime + RLS를 한 번에 제공, 로그인 없는 구조와 적합</td></tr><tr><td>서버 로직</td><td><code>SECURITY DEFINER</code> SQL 함수(RPC)</td><td>판정·매칭·대진 생성·진출 처리는 전부 서버 안에서 실행</td></tr><tr><td>동시성</td><td><code>FOR UPDATE</code>, 잠금 순서 통일(rooms → tournaments → tournament_matches)</td><td>여러 방이 동시에 끝나도 중복 진출·교착 방지</td></tr><tr><td>실시간</td><td>Supabase Realtime(postgres_changes)</td><td>화면이 새로고침 없이 변경을 반영</td></tr><tr><td>배포</td><td>GitHub Pages</td><td>정적 파일만으로 무료 배포</td></tr></tbody></table>
+
+
+<p><strong>v3 아키텍처 핵심 — "자릿수는 방(rooms)이 가진다"</strong></p>
+<ul><li>교사 설정은 <code>sessions.digits</code>(3 또는 4, DB 기본값 4)에 저장하고, 방이 만들어질 때 <code>rooms.digits</code>로 <strong>복사</strong>한다. <code>submit_guess</code>는 이미 잠근 방 행의 <code>digits</code>만 보고 형식 검사·중복 검사·승리 조건(<code>strikes = digits</code>)을 판정하므로, 진행 중인 방은 세션 설정이 바뀌어도 흔들리지 않고 방 코드/대회에서 자릿수가 일관된다.
+</li><li><code>generate_secret(p_digits int default 4)</code>는 인자를 받고, <code>judge_guess</code>는 비밀번호 길이를 기준으로 판정해 함수 시그니처를 유지했다.
+</li><li><code>match_waiting_players</code>와 <code>tournament_create_match_room</code>이 세션의 자릿수를 읽어 방 생성 시 전달하고, <code>create_tournament</code>는 <code>p_digits</code>를 받는다(기본값 4로 옛 호출도 동작).
+</li><li>학급 방 설정 변경은 기존 규칙(컬럼 단위 GRANT + RLS: <code>capacity = 0</code>이면서 <code>mode = 'free'</code>인 세션만)을 그대로 따르므로 토너먼트/리그는 시작 후 자릿수를 바꿀 수 없다.
+</li><li>클라이언트는 입력 칸(<code>.guess-slot</code>) 4개 고정 마크업을 없애고 <code>renderGuessSlots(containerId, count)</code>로 자릿수만큼 만든다. AI 후보 생성(<code>generateAllCandidates</code>)도 자릿수를 받아 재귀로 만든다(4자리 5,040개, 3자리 720개).
+</li></ul>
+
+</section>
+<section id="sec-5"><h2>5. 개발 과정 (타임라인)</h2>
+
+
+<p>v2 이후 진행한 작업이다.</p>
+
+
+<ol><li><strong>스플래시 화면 프롬프트 스킬 제작</strong>: 전역 스킬 <code>make-homescreen</code>을 만들었다. 처음엔 메뉴가 있는 홈 화면을 만들었지만, 사용자가 "첫 접속 시 보이는 스플래시 화면, 메뉴 없이 배경+제목만, 들어가기 버튼은 앱에서 구현"이라고 정정해 스킬을 수정했다.</li><li><strong>3자리 모드 방식 논의(<code>/plan</code>)</strong>: 사용자가 (1) 메인 화면 전역 드롭다운 vs (2) 기능별 선택 중 하나를 추천해 달라고 요청. 코드와 서버 함수를 조사해 "방 단위 설정"을 추천했다.</li><li><strong>구현 계획서 작성</strong>: 위치별 하드코딩(클라이언트 16곳, 서버 3개 함수)과 서버 설계를 담은 <code>.omc/plans/digits-mode-plan.md</code>. 사용자가 기본값에 동의.</li><li><strong>구현</strong>: DB 마이그레이션(<code>digits_mode</code>) → <code>game.js</code> 일반화 → 연습/방/학급 방 설정/대회 설정 UI → 배지 → README.</li><li><strong>기본값 변경 요청</strong>: "세 곳 모두 기본 게임 모드를 3자리로". UI 기본 선택과 학급 방 생성(<code>digits: 3</code>)을 바꾸고, 친구 초대는 그대로 두었다.</li></ol>
+
+
+</section>
+<section id="sec-6"><h2>6. 주요 의사결정과 이유</h2>
+
+<ul><li><strong>전역 모드 대신 방 단위 설정</strong>: 메인 화면은 학생도 쓰는 화면이라 학생이 바꿀 수 있고, 온라인 대전은 두 사람의 자릿수가 다르면 성립하지 않는다. 교사가 만든 방·대회는 교사 설정이 우선해야 하므로 전역 설정은 사실상 연습에만 의미가 있다. 반면 방/대회의 자릿수는 턴 시간·시도 횟수와 같은 성격의 설정이라 기존 설정 화면에 자연스럽게 들어간다.
+</li><li><strong>처음 제안 정정 — 랜덤 매칭 대기열 분리는 불필요</strong>: 처음에는 "매칭을 자릿수별 대기열로 분리"를 제안했으나, 코드를 조사해 보니 <code>match_waiting_players</code>는 한 학급 방(세션) 안에서만 짝을 짓는다. 자릿수를 세션에 저장하면 같은 방의 학생은 모두 같은 자릿수라 매칭 로직을 바꿀 필요가 없다.
+</li><li><strong>방에 자릿수를 복사</strong>: 세션 조인 없이 방 행(이미 잠금)만으로 판정하게 해 잠금·일관성 문제를 피했다.
+</li><li><strong>랭킹은 이번에 자릿수를 구분하지 않고 합산</strong>: 범위를 줄이기 위한 결정이며 후속 과제로 남겼다.
+</li><li><strong>DB 컬럼 기본값은 4, 클라이언트가 3을 명시</strong>: 배포 직후 옛 JS 캐시가 방을 만들어도 옛 동작(4자리)과 호환된다. 친구 초대는 자릿수 UI가 없어 4자리를 유지했다.
+</li><li><strong>연습 모드 자릿수는 브라우저에만 저장(<code>localStorage</code>)</strong>: 혼자 하는 설정이라 서버 저장이 필요 없고, 저장소를 못 쓰는 환경에서도 기본값으로 동작하도록 try/catch로 감쌌다.
+</li><li><strong>3자리일 때만 배지 표시</strong>: 4자리 화면의 변화를 최소화했다.
+</li></ul>
+
+</section>
+<section id="sec-7"><h2>7. 문제 해결 기록</h2>
+
+<ul><li><strong>컬럼 단위 GRANT 문법 오류</strong>: <code>grant select, insert, update on public.sessions (digits) to ...</code>는 문법 오류였다. 올바른 형식은 <code>grant select (digits), insert (digits), update (digits) on public.sessions to ...</code>. 마이그레이션은 한 트랜잭션이라 실패해도 일부만 적용되지 않았다.
+</li><li><strong><code>isValidGuess</code> 정규식 이스케이프</strong>: 자릿수를 정규식에 끼워 넣던 코드가 Python 문자열 처리 중 <code>\d</code>가 깨져 항상 실패했다. 테스트가 바로 잡아냈고, 정규식 대신 <code>길이 검사 + 숫자만 검사 + 중복 검사</code>로 단순하게 바꿨다.
+</li><li><strong>서버 형식 검사 위치</strong>: <code>submit_guess</code>의 형식 검사가 방을 잠그기 전에 있었는데, 자릿수를 방에서 읽어야 하므로 잠금 뒤로 옮겼다(예외 메시지는 유지).
+</li><li><strong>함수 오버로드 위험</strong>: <code>generate_secret()</code>과 <code>create_tournament(...)</code>는 인자를 추가하면 옛 함수가 남아 호출이 모호해질 수 있어 옛 함수를 <code>drop</code>한 뒤 다시 만들고 권한을 다시 부여했다(<code>pg_proc</code>로 오버로드가 하나뿐임을 확인).
+</li><li><strong>검증 도구 상실</strong>: 이전 세션의 jsdom 테스트 스크립트(37항목)가 임시 폴더에서 사라져 다시 돌릴 수 없었다. 새 테스트(21항목)를 다시 작성해 3자리 경로와 기본값을 확인했다.
+</li><li><strong>입력 칸 개수 고정 마크업</strong>: 슬롯이 HTML에 4개 고정이라 3칸으로 줄이려면 마크업을 비우고 JS로 렌더링하도록 바꿔야 했다.
+</li></ul>
+
+</section>
+<section id="sec-8"><h2>8. 보안/성능 고려사항</h2>
+
+<ul><li><strong>서버 판정</strong>: 자릿수는 서버가 방 기준으로 검증한다. 3자리 방에 4자리 추측, 4자리 방에 3자리 추측, 3자리 방의 중복 숫자는 모두 예외로 거부된다(클라이언트가 조작되어도 우회 불가).
+</li><li><strong>권한</strong>: 새 컬럼 <code>sessions.digits</code>에만 컬럼 단위 SELECT/INSERT/UPDATE를 부여하고, <code>rooms.digits</code>는 SELECT만 부여했다(방 자릿수는 서버만 쓴다). 내부 함수의 EXECUTE 권한 규칙(v2)은 유지했다.
+</li><li><strong>설정 변경 범위</strong>: 학급 방의 <code>digits</code> 변경은 기존 정책(<code>capacity = 0</code> and <code>mode = 'free'</code>)으로만 허용된다. 다만 학급 방은 서버에서 교사와 학생을 구분하지 못하는 구조(로그인 없음)라, 방 코드를 아는 악의적 사용자가 API로 직접 자릿수를 바꾸는 것은 막지 못한다(턴 시간·시도 횟수도 동일한 기존 한계). 이미 열린 방은 <code>rooms.digits</code>가 고정이라 영향이 없다.
+</li><li><strong>성능</strong>: AI 후보 생성이 재귀로 바뀌었지만 5,040개 수준이라 부담이 없다(3자리는 720개로 오히려 가볍다).
+</li><li><strong>v2에서 이어진 보안 조치</strong>: 관리 토큰 인증, <code>finish_room</code>/<code>forfeit_room</code> 하드닝, 잠금 순서 통일, 참가 트리거.
+</li></ul>
+
+</section>
+<section id="sec-9"><h2>9. 테스트 및 검증</h2>
+
+<ul><li><strong>DB 시뮬레이션(롤백 트랜잭션)</strong>: 3자리 학급 방과 4자리 학급 방을 동시에 만들어 각각 방 <code>digits</code>, 비밀번호 길이, 잘못된 자릿수 추측 거부, 중복 숫자 거부, 정답 시 승리·방 종료를 확인. 3자리 토너먼트·리그(3명)에서 라운드 방이 모두 <code>digits=3</code>, 비밀번호 3자리임을 확인. 익명(anon) 권한으로 <code>digits=3</code> 세션 생성 확인.
+</li><li><strong>화면 시뮬레이션(jsdom, 21항목)</strong>: 3자리 비밀번호 생성·판정·검증, AI 3자리 추측, 연습 3자리 슬롯/제출 조건/승리, 4자리 복귀, 방 슬롯·배지·제출 조건, <code>digits</code> 없는 옛 방의 4자리 호환, 토너먼트 <code>p_digits</code> 전달, 세 곳의 기본값 3자리.
+</li><li><strong>화면 캡처(Playwright + 임시 로컬 서버)</strong>: 연습 설정 화면의 자릿수 토글, 3칸 입력 게임 화면(모바일 폭)을 확인.
+</li><li><strong>미확인</strong>: 옛 jsdom 회귀 테스트(37항목)는 재실행하지 못했다. 여러 실제 기기로 3자리 학급 방·토너먼트를 끝까지 진행하는 확인은 사용자 테스트에 의존한다. 데스크톱 폭에서 학급 방/대회 설정 화면의 자릿수 행 레이아웃도 별도 캡처는 하지 않았다.
+</li></ul>
+
+</section>
+<section id="sec-10"><h2>10. 배포</h2>
+
+<ul><li>저장소: <a href="https://github.com/poguni/strike-four">https://github.com/poguni/strike-four</a>
+</li><li>배포 URL: <a href="https://poguni.github.io/strike-four/">https://poguni.github.io/strike-four/</a>
+</li><li>배포 방식: 저장소 루트 <code>index.html</code>을 소스로 하는 GitHub Pages(<code>main</code>, <code>/root</code>).
+</li><li>DB 변경은 Supabase 마이그레이션 <code>digits_mode</code>로 이미 적용되어 있다. 배포 직후에는 이전 버전 브라우저 캐시가 옛 4칸 입력 화면을 보일 수 있어 강력 새로고침(Ctrl+F5) 안내가 필요하다. 옛 JS로 3자리 방에 들어가면 서버가 제출을 거부한다.
+</li></ul>
+
+</section>
+<section id="sec-11"><h2>11. 알려진 한계</h2>
+
+<ul><li>3자리와 4자리의 승패·랭킹이 합산된다(3자리 승리가 4자리 랭킹을 올릴 수 있음).
+</li><li>친구 초대는 4자리 고정이다(자릿수 선택 UI 없음).
+</li><li>학급 방은 교사/학생 구분이 없어, 방 코드를 아는 사용자가 API를 직접 호출하면 대기 중인 학급 방의 자릿수를 바꿀 수 있다(UI에는 노출되지 않음).
+</li><li>3자리는 조합이 720개로 적어 시도 횟수 기본값(10회)에서는 쉬워질 수 있어, 교사가 시도 횟수로 조절해야 한다.
+</li><li>교사가 브라우저 데이터를 지우면 대회 관리 토큰을 잃어 대회를 계속 관리할 수 없다.
+</li><li>교사 브라우저를 새로고침하면 대시보드가 자동으로 열리지 않는다(허브의 "대회 화면으로 가기" 사용).
+</li><li>토너먼트 연장전은 학생/교사 화면이 열려 있어야 자동 시작된다.
+</li><li>접속을 끊은 상대 때문에 경기가 끝나려면 그 선수가 연속 3번 시간 초과해야 한다.
+</li><li>로그인이 없어 같은 학생이 다른 기기로 접속하면 별도 사용자로 집계된다.
+</li><li>자동 UI 회귀 테스트가 저장소에 없다(테스트 스크립트는 작업 폴더 밖에만 존재하고, 이번에도 일부가 사라졌다).
+</li></ul>
+
+</section>
+<section id="sec-12"><h2>12. 향후 개선 아이디어 / 업데이트 계획</h2>
+
+
+<p><strong>다음에 하면 좋을 것</strong></p>
+<ul><li>랭킹·전적을 자릿수별로 분리(<code>match_results.digits</code> 추가 후 집계에 반영) — 난이도가 다른 승리가 섞이는 문제 해소
+</li><li>화면 시뮬레이션/스크린샷 테스트를 저장소(<code>tests/</code>)에 포함해 회귀 테스트로 관리(이번에 도구가 사라진 문제를 예방)
+</li><li>스플래시 화면(첫 접속 시 배경+제목+"들어가기" 버튼)을 앱에 구현하고 Nano Banana로 만든 이미지를 적용
+</li><li>토너먼트 연장전/다음 라운드를 서버가 시간 기준으로 자동 시작(<code>pg_cron</code>)해 화면 의존 제거
+</li><li>교사 대시보드 자동 복구 및 관리 토큰 백업/복구 수단
+</li></ul>
+
+<p><strong>여유 있으면</strong></p>
+<ul><li>친구 초대에도 자릿수 선택 추가
+</li><li>단계형 연습(3자리를 이기면 4자리 도전 제안)
+</li><li>3자리 모드용 시도 횟수 기본값 제안(예: 7~8회)
+</li><li>대회 결과를 이미지·인쇄용 화면으로 저장, 대회 전용 순위, 대회 이력 조회
+</li><li>남은 화면(방 참가하기, 대기열, 경기 결과, 랭킹)도 같은 디자인 체계로 통일
+</li><li>3·4위전, 스위스식 매칭, 자동 라운드 진행, 패자부활전
+</li></ul>
+
+<p><strong>아이디어 수준</strong></p>
+<ul><li>전자칠판용 교사 모니터(실시간 대진표/순위표 대형 화면)
+</li><li>5자리 이상 확장 또는 교사가 정하는 숫자 범위(0~9 외)
+</li><li>교사가 대회 옵션(연장전 횟수, 부전 승점 등)을 조정하는 고급 설정
+</li><li>관전 모드
+</li></ul>
+
+</section>
+<section id="sec-13"><h2>13. 이전 버전(v2) 이후 변경 사항</h2>
+
+
+<p><strong>추가</strong></p>
+<ul><li>3자리 숫자 모드(혼자 연습·학급 방·토너먼트/리그전), 3자리 배지, 세 곳의 기본값 3자리
+</li><li>DB: <code>sessions.digits</code>/<code>rooms.digits</code>, <code>generate_secret(p_digits)</code>, 자릿수 인식 <code>submit_guess</code>/<code>judge_guess</code>/<code>match_waiting_players</code>/<code>tournament_create_match_room</code>/<code>create_tournament</code>
+</li><li>클라이언트: <code>renderGuessSlots</code>, 자릿수 인자를 받는 <code>generateSecret</code>/<code>judge</code>/<code>isValidGuess</code>/<code>createAI</code>
+</li></ul>
+
+<p><strong>변경</strong></p>
+<ul><li>입력 칸이 HTML 고정 4개에서 JS 렌더링(자릿수만큼)으로 바뀜
+</li><li><code>submit_guess</code>의 형식 검사가 방 잠금 이후로 이동
+</li></ul>
+
+<p><strong>문서/도구</strong></p>
+<ul><li>README에 3자리 모드 설명 추가, 계획서 <code>.omc/plans/digits-mode-plan.md</code> 작성
+</li><li>전역 스킬 <code>make-homescreen</code>(스플래시 화면 프롬프트) 추가, 본 보고서(v3) 작성
+</li></ul>
+
+</section>
+  </main>
+</div>
+<script>
+  const links = document.querySelectorAll('nav.sidebar a');
+  const sections = [...links].map(a => document.querySelector(a.getAttribute('href')));
+  const setActive = (id) => links.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + id));
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => { if (entry.isIntersecting) setActive(entry.target.id); });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  sections.forEach((el) => el && observer.observe(el));
+</script>
+</body>
+</html>
