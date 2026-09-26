@@ -2,7 +2,7 @@
 
 let practiceState = null;
 let selectedLevel = 'easy';
-let selectedDigits = 4;
+let selectedDigits = 3;
 const PRACTICE_DIGITS_KEY = 'numball_practice_digits';
 
 function logAttempt(logId, attemptNumber, guess, result) {
@@ -151,7 +151,7 @@ function initPractice() {
   document.querySelector(`.difficulty-btn[data-level="${selectedLevel}"]`).classList.add('selected');
 
   try {
-    if (localStorage.getItem(PRACTICE_DIGITS_KEY) === '3') selectedDigits = 3;
+    if (localStorage.getItem(PRACTICE_DIGITS_KEY) === '4') selectedDigits = 4;
   } catch (e) { /* 저장소를 못 쓰면 기본값(4자리) */ }
   document.querySelectorAll('.digits-btn').forEach((btn) => {
     btn.classList.toggle('selected', Number(btn.dataset.digits) === selectedDigits);

@@ -39,7 +39,8 @@ async function createSession(capacity, teacherId) {
     const code = generateSessionCode();
     const { data, error } = await supabaseClient
       .from('sessions')
-      .insert({ code, capacity, teacher_id: teacherId })
+      // 학급 방(capacity 0)은 3자리가 기본, 친구 초대는 기존대로 4자리
+      .insert({ code, capacity, teacher_id: teacherId, digits: capacity === 0 ? 3 : 4 })
       .select()
       .single();
     if (!error) return data;
