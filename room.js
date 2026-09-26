@@ -66,7 +66,7 @@ function renderRoomGuessDisplay() {
   });
   document.querySelector('#room-keypad [data-action="clear"]').disabled = !canPlay;
   document.querySelector('#room-keypad [data-action="submit"]').disabled =
-    !canPlay || roomState.currentDigits.length !== 4;
+    !canPlay || roomState.currentDigits.length !== roomState.digits;
 }
 
 function updateRoomAttemptStatus() {
@@ -195,6 +195,9 @@ function applyRoomState(room) {
   roomState.playerB = room.player_b;
   roomState.opponentId = room.player_a === roomState.myId ? room.player_b : room.player_a;
   roomState.maxAttempts = room.max_attempts;
+  roomState.digits = room.digits || 4;
+  renderGuessSlots('room-guess-display', roomState.digits);
+  document.getElementById('room-digits-badge').hidden = roomState.digits !== 3;
   roomState.status = room.status;
   roomState.turnPlayerId = room.turn_player_id;
   roomState.turnDeadline = room.turn_deadline;
@@ -267,6 +270,7 @@ function enterRoom(sessionId, roomId, opponentNickname) {
     opponentNickname,
     myId: getPlayerId(),
     currentDigits: [],
+    digits: 4,
     isMyTurn: false,
     status: 'active',
     myAttemptCount: 0,
@@ -412,7 +416,7 @@ function initRoom() {
     if (!btn || !roomState || !roomState.isMyTurn) return;
 
     if (btn.dataset.digit !== undefined && btn.dataset.digit !== '') {
-      if (roomState.currentDigits.length < 4 && !roomState.currentDigits.includes(btn.dataset.digit)) {
+      if (roomState.currentDigits.length < roomState.digits && !roomState.currentDigits.includes(btn.dataset.digit)) {
         roomState.currentDigits.push(btn.dataset.digit);
         renderRoomGuessDisplay();
       }
@@ -423,7 +427,7 @@ function initRoom() {
       renderRoomGuessDisplay();
       return;
     }
-    if (btn.dataset.action === 'submit' && roomState.currentDigits.length === 4) {
+    if (btn.dataset.action === 'submit' && roomState.currentDigits.length === roomState.digits) {
       submitMyGuess(roomState.currentDigits.join(''));
     }
   });

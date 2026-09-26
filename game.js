@@ -1,45 +1,55 @@
 // Phase 3: 숫자야구 판정 로직 + 난이도별 AI (DOM에 의존하지 않는 순수 로직)
 
-function generateSecret() {
+function generateSecret(count = 4) {
   const digits = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
   for (let i = digits.length - 1; i > 0; i -= 1) {
     const j = Math.floor(Math.random() * (i + 1));
     [digits[i], digits[j]] = [digits[j], digits[i]];
   }
-  return digits.slice(0, 4).join('');
+  return digits.slice(0, count).join('');
 }
 
 function judge(secret, guess) {
   let strikes = 0;
   let balls = 0;
-  for (let i = 0; i < 4; i += 1) {
+  for (let i = 0; i < secret.length; i += 1) {
     if (guess[i] === secret[i]) {
       strikes += 1;
     } else if (secret.includes(guess[i])) {
       balls += 1;
     }
   }
-  return { strikes, balls, outs: 4 - strikes - balls };
+  return { strikes, balls, outs: secret.length - strikes - balls };
 }
 
-function isValidGuess(guess) {
-  return /^\d{4}$/.test(guess) && new Set(guess).size === 4;
+function isValidGuess(guess, count = 4) {
+  return guess.length === count && /^\d+$/.test(guess) && new Set(guess).size === count;
 }
 
-function generateAllCandidates() {
-  const candidates = [];
-  for (let a = 0; a <= 9; a += 1) {
-    for (let b = 0; b <= 9; b += 1) {
-      if (b === a) continue;
-      for (let c = 0; c <= 9; c += 1) {
-        if (c === a || c === b) continue;
-        for (let d = 0; d <= 9; d += 1) {
-          if (d === a || d === b || d === c) continue;
-          candidates.push(`${a}${b}${c}${d}`);
-        }
-      }
-    }
+// 입력 칸(.guess-slot)을 자릿수만큼 만든다. 이미 같은 개수면 그대로 둔다.
+function renderGuessSlots(containerId, count) {
+  const container = document.getElementById(containerId);
+  if (!container || container.children.length === count) return;
+  container.innerHTML = '';
+  for (let i = 0; i < count; i += 1) {
+    const slot = document.createElement('span');
+    slot.className = 'guess-slot';
+    container.appendChild(slot);
   }
+}
+
+function generateAllCandidates(count = 4) {
+  const candidates = [];
+  const build = (prefix) => {
+    if (prefix.length === count) {
+      candidates.push(prefix);
+      return;
+    }
+    for (let d = 0; d <= 9; d += 1) {
+      if (!prefix.includes(String(d))) build(prefix + d);
+    }
+  };
+  build('');
   return candidates;
 }
 
@@ -93,8 +103,8 @@ function pickMinimaxGuess(candidates) {
 }
 
 // level: 'easy' | 'normal' | 'hard'
-function createAI(level) {
-  const allCandidates = generateAllCandidates();
+function createAI(level, count = 4) {
+  const allCandidates = generateAllCandidates(count);
   let candidates = allCandidates;
   let firstMove = true;
 

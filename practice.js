@@ -2,6 +2,8 @@
 
 let practiceState = null;
 let selectedLevel = 'easy';
+let selectedDigits = 4;
+const PRACTICE_DIGITS_KEY = 'numball_practice_digits';
 
 function logAttempt(logId, attemptNumber, guess, result) {
   const log = document.getElementById(logId);
@@ -40,7 +42,7 @@ function renderGuessDisplay() {
   });
   document.querySelector('#keypad [data-action="clear"]').disabled = !practiceState.isMyTurn;
   document.querySelector('#keypad [data-action="submit"]').disabled =
-    !practiceState.isMyTurn || practiceState.currentDigits.length !== 4;
+    !practiceState.isMyTurn || practiceState.currentDigits.length !== practiceState.digits;
 }
 
 function setPracticeTurn(who) {
@@ -83,7 +85,7 @@ function resolveAiTurn() {
   practiceState.aiAttempts += 1;
   logAttempt('ai-attack-log', practiceState.aiAttempts, guess, result);
 
-  if (result.strikes === 4) {
+  if (result.strikes === practiceState.digits) {
     endPracticeGame('lose');
     return;
   }
@@ -101,7 +103,7 @@ function resolvePlayerTurn(guess) {
   practiceState.currentDigits = [];
   updatePracticeStatus();
 
-  if (result.strikes === 4) {
+  if (result.strikes === practiceState.digits) {
     endPracticeGame('win');
     return;
   }
@@ -110,13 +112,14 @@ function resolvePlayerTurn(guess) {
   setTimeout(resolveAiTurn, 600);
 }
 
-function startPracticeGame(level, maxAttempts) {
+function startPracticeGame(level, maxAttempts, digits) {
   practiceState = {
     level,
     maxAttempts,
-    mySecret: generateSecret(),
-    aiSecret: generateSecret(),
-    ai: createAI(level),
+    digits,
+    mySecret: generateSecret(digits),
+    aiSecret: generateSecret(digits),
+    ai: createAI(level, digits),
     myAttempts: 0,
     aiAttempts: 0,
     currentDigits: [],
@@ -127,6 +130,7 @@ function startPracticeGame(level, maxAttempts) {
   document.getElementById('ai-attack-log').innerHTML = '';
   document.getElementById('practice-turn-indicator').textContent = '내 차례';
   updatePracticeStatus();
+  renderGuessSlots('guess-display', digits);
   renderGuessDisplay();
   showScreen('screen-practice-game');
 }
@@ -146,9 +150,23 @@ function initPractice() {
   });
   document.querySelector(`.difficulty-btn[data-level="${selectedLevel}"]`).classList.add('selected');
 
+  try {
+    if (localStorage.getItem(PRACTICE_DIGITS_KEY) === '3') selectedDigits = 3;
+  } catch (e) { /* 저장소를 못 쓰면 기본값(4자리) */ }
+  document.querySelectorAll('.digits-btn').forEach((btn) => {
+    btn.classList.toggle('selected', Number(btn.dataset.digits) === selectedDigits);
+    btn.addEventListener('click', () => {
+      selectedDigits = Number(btn.dataset.digits);
+      document.querySelectorAll('.digits-btn').forEach((b) => {
+        b.classList.toggle('selected', b === btn);
+      });
+      try { localStorage.setItem(PRACTICE_DIGITS_KEY, String(selectedDigits)); } catch (e) { /* 무시 */ }
+    });
+  });
+
   document.getElementById('start-practice-btn').addEventListener('click', () => {
     const maxAttempts = Number(document.getElementById('attempts-select').value);
-    startPracticeGame(selectedLevel, maxAttempts);
+    startPracticeGame(selectedLevel, maxAttempts, selectedDigits);
   });
 
   document.getElementById('practice-setup-back-btn').addEventListener('click', () => {
@@ -161,7 +179,7 @@ function initPractice() {
       return;
     }
     if (btn.dataset.digit !== undefined && btn.dataset.digit !== '') {
-      if (practiceState.currentDigits.length < 4 && !practiceState.currentDigits.includes(btn.dataset.digit)) {
+      if (practiceState.currentDigits.length < practiceState.digits && !practiceState.currentDigits.includes(btn.dataset.digit)) {
         practiceState.currentDigits.push(btn.dataset.digit);
         renderGuessDisplay();
       }
@@ -172,7 +190,7 @@ function initPractice() {
       renderGuessDisplay();
       return;
     }
-    if (btn.dataset.action === 'submit' && practiceState.currentDigits.length === 4) {
+    if (btn.dataset.action === 'submit' && practiceState.currentDigits.length === practiceState.digits) {
       resolvePlayerTurn(practiceState.currentDigits.join(''));
     }
   });
@@ -182,7 +200,7 @@ function initPractice() {
   });
 
   document.getElementById('practice-retry-btn').addEventListener('click', () => {
-    startPracticeGame(practiceState.level, practiceState.maxAttempts);
+    startPracticeGame(practiceState.level, practiceState.maxAttempts, practiceState.digits);
   });
 
   document.getElementById('practice-home-btn').addEventListener('click', () => {

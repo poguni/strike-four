@@ -512,6 +512,34 @@ body {
   border-color: transparent;
 }
 
+.digits-options {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.digits-btn {
+  flex: 1 1 40%;
+}
+
+.digits-btn.selected {
+  background: var(--accent-primary-grad, var(--accent-primary-bg));
+  color: var(--accent-primary-text);
+  border-color: transparent;
+}
+
+.digits-badge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 10px;
+  font-size: 0.85em;
+  font-weight: 700;
+  vertical-align: middle;
+  color: var(--accent-primary-text);
+  background: var(--accent-primary-grad, var(--accent-primary-bg));
+  border-radius: 999px;
+}
+
 .attempts-options {
   display: flex;
   align-items: center;

@@ -114,6 +114,10 @@
         <button type="button" class="btn btn-secondary difficulty-btn" data-level="normal">보통</button>
         <button type="button" class="btn btn-secondary difficulty-btn" data-level="hard">어려움</button>
       </div>
+      <div class="digits-options" role="radiogroup" aria-label="숫자 자릿수">
+        <button type="button" class="btn btn-secondary digits-btn" data-digits="3">3자리</button>
+        <button type="button" class="btn btn-secondary digits-btn selected" data-digits="4">4자리</button>
+      </div>
       <div class="attempts-options">
         <label for="attempts-select">시도 횟수</label>
         <select id="attempts-select">
@@ -151,12 +155,7 @@
         </div>
       </div>
 
-      <div class="guess-display" id="guess-display" aria-live="polite">
-        <span class="guess-slot"></span>
-        <span class="guess-slot"></span>
-        <span class="guess-slot"></span>
-        <span class="guess-slot"></span>
-      </div>
+      <div class="guess-display" id="guess-display" aria-live="polite"></div>
 
       <div class="keypad" id="keypad">
         <button type="button" class="keypad-btn" data-digit="1">1</button>
@@ -216,6 +215,13 @@
             </select>
           </div>
           <div class="t-row">
+            <label for="setting-digits">숫자 자릿수</label>
+            <select id="setting-digits">
+              <option value="3">3자리</option>
+              <option value="4" selected>4자리</option>
+            </select>
+          </div>
+          <div class="t-row">
             <label for="setting-max-attempts">시도 횟수</label>
             <select id="setting-max-attempts">
               <option value="10" selected>10회</option>
@@ -260,7 +266,7 @@
     </section>
 
     <section class="screen" id="screen-lobby" hidden>
-      <h2>대기열</h2>
+      <h2>대기열 <span id="lobby-digits-badge" class="digits-badge" hidden>3자리</span></h2>
       <p>방 코드: <strong id="lobby-session-code">------</strong></p>
       <p id="lobby-status">상대를 기다리는 중이에요...</p>
       <button type="button" class="btn btn-secondary" id="invite-friend-btn">친구 초대하기</button>
@@ -270,6 +276,7 @@
     <section class="screen" id="screen-room-game" hidden>
       <div class="game-status">
         <span id="room-turn-indicator">내 차례</span>
+        <span id="room-digits-badge" class="digits-badge" hidden>3자리</span>
         <span id="room-attempt-status"></span>
         <span id="room-timer"></span>
       </div>
@@ -286,12 +293,7 @@
         </div>
       </div>
 
-      <div class="guess-display" id="room-guess-display" aria-live="polite">
-        <span class="guess-slot"></span>
-        <span class="guess-slot"></span>
-        <span class="guess-slot"></span>
-        <span class="guess-slot"></span>
-      </div>
+      <div class="guess-display" id="room-guess-display" aria-live="polite"></div>
 
       <div class="keypad" id="room-keypad">
         <button type="button" class="keypad-btn" data-digit="1">1</button>
@@ -365,6 +367,13 @@
             <option value="30" selected>30초</option>
             <option value="40">40초</option>
             <option value="50">50초</option>
+          </select>
+        </div>
+        <div class="t-row">
+          <label for="tournament-digits">숫자 자릿수</label>
+          <select id="tournament-digits">
+            <option value="3">3자리</option>
+            <option value="4" selected>4자리</option>
           </select>
         </div>
         <div class="t-row">

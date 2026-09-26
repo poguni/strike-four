@@ -141,6 +141,7 @@ async function createTournament() {
         p_format: selectedTournamentFormat,
         p_turn_seconds: Number(tById('tournament-turn-seconds').value),
         p_max_attempts: Number(tById('tournament-max-attempts').value),
+        p_digits: Number(tById('tournament-digits').value),
         p_league_rounds: leagueRounds,
       });
       if (!error) {
@@ -598,6 +599,12 @@ function renderTournament() {
   const standings = t.format === 'league' && showBoardData ? computeStandings(state.players, state.matches) : [];
 
   tById('tournament-title').textContent = `${T_FORMAT_LABEL[t.format]} 대회`;
+  if (state.session && state.session.digits === 3) {
+    const badge = document.createElement('span');
+    badge.className = 'digits-badge';
+    badge.textContent = '3자리';
+    tById('tournament-title').appendChild(badge);
+  }
   tById('tournament-status').textContent = isTeacher ? tTeacherStatus(t) : tStudentStatus(t, names, standings);
 
   // 교사: 코드/QR (모집 중에만)

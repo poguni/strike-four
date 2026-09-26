@@ -57,6 +57,7 @@ design-reference/   # 최종 디자인 시안 HTML 목업(모바일/PC × 파스
 - 테이블: `tournaments`, `tournament_players`, `tournament_matches`(익명 SELECT만 허용, 쓰기는 RPC 전용), `tournament_admin`(RLS만 켜고 정책 없음 → 익명 조회 불가. 교사 브라우저에만 주는 관리 토큰 저장).
 - RPC: `create_tournament`, `start_tournament`, `start_next_round`, `resolve_match`(몰수패/동전 던지기/무승부 처리), `remove_tournament_player`, `finish_tournament`, `cancel_tournament`(진행 중인 경기 방을 전적 기록 없이 닫고 대회를 `cancelled`로 바꿈)는 관리 토큰이 있어야 실행되고, `start_tiebreak`는 누구나 호출해도 상태가 `tiebreak`일 때만 동작한다. 내부 함수(`tournament_*`)는 anon 실행 권한을 회수했다.
 - 토너먼트: 무작위 대진, 인원이 2의 거듭제곱이 아니면 1라운드 부전승. 무승부는 연장전(최대 2번) 후 동전 던지기. 리그: 원 돌리기(circle method) 대진으로 라운드마다 전원이 동시에 1경기, 승 3·무 1·패 0, 쉬는 라운드 1점, 순위는 승점 → 승수 → 이긴 경기 평균 시도 횟수.
+- **3자리 숫자 모드**: 기본은 4자리이고, 학급 방·토너먼트/리그는 교사가 만들 때(`sessions.digits`), 혼자 연습은 시작 전에 학생이 3자리/4자리를 고른다. 방은 만들어질 때 세션의 자릿수를 `rooms.digits`로 복사해 판정(`submit_guess`, `judge_guess`, `generate_secret(p_digits)`)이 방 기준으로 일관되게 동작한다. 학급 방의 자릿수 변경은 다른 설정처럼 `capacity = 0`인 학급 방에서만 허용되고, 토너먼트/리그는 시작 후 변경할 수 없다. 랭킹·승패 기록은 3자리와 4자리를 구분하지 않고 합산한다(후속 과제).
 - 대회 경기도 `finish_room()`을 거치므로 `match_results`에 기록되어 학급 랭킹·메인 화면 전적에 반영된다(부전·동전 던지기는 경기가 없으므로 제외).
 - 알려진 한계: 대회 관리 토큰을 잃어버리면(브라우저 데이터 삭제) 그 대회를 계속 관리할 수 없다. 자동 라운드 진행, 3·4위전, 스위스식 매칭은 아직 없다.
 

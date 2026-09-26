@@ -179,6 +179,7 @@ async function startCreateClassSession() {
       '학생들이 아래 QR을 스캔하거나 코드를 입력하면 자동으로 짝지어져요.';
     document.getElementById('setting-turn-seconds').value = String(session.turn_seconds);
     document.getElementById('setting-max-attempts').value = String(session.max_attempts);
+    document.getElementById('setting-digits').value = String(session.digits || 4);
     document.getElementById('create-session-settings').hidden = false;
     subscribeTeacherWaitCount(session.id);
   } catch (error) {
@@ -265,6 +266,7 @@ async function enterLobby(session) {
   currentSession = session;
   showScreen('screen-lobby');
   document.getElementById('lobby-session-code').textContent = session.code;
+  document.getElementById('lobby-digits-badge').hidden = (session.digits || 4) !== 3;
   document.getElementById('lobby-status').textContent = '상대를 기다리는 중이에요...';
   document.getElementById('invite-friend-btn').hidden = session.capacity === 2;
 
@@ -343,6 +345,9 @@ function initSession() {
 
   document.getElementById('setting-turn-seconds').addEventListener('change', (event) => {
     updateSessionSetting('turn_seconds', Number(event.target.value));
+  });
+  document.getElementById('setting-digits').addEventListener('change', (event) => {
+    updateSessionSetting('digits', Number(event.target.value));
   });
   document.getElementById('setting-max-attempts').addEventListener('change', (event) => {
     updateSessionSetting('max_attempts', Number(event.target.value));
