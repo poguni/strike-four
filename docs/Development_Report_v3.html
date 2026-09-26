@@ -84,6 +84,12 @@
 </li></ul>
 </li><li><strong>기본값 3자리</strong>: 혼자 연습, 학급 방 만들기, 토너먼트/리그전 모두 기본 선택이 3자리(4자리로 바꿀 수 있음). 친구 초대는 4자리 유지.
 </li><li><strong>메인 화면에는 게임 모드 선택을 두지 않음</strong>: 학생이 바꿀 수 없게 하기 위함.
+</li><li><strong>칠판용 보기(전자칠판 화면)</strong>: 교사의 토너먼트/리그전 화면에 "🖥️ 칠판용 보기" 버튼을 추가했다. 누르면 전자칠판에 띄우는 읽기 전용 전체 화면이 열린다(학급 방 자유 매칭은 제외).
+<ul><li><strong>모집 중</strong>: 큰 참가 코드·QR·"현재 N명 참가"·참가자 이름(학생이 들어오면 실시간 갱신).
+</li><li><strong>진행 중</strong>: 토너먼트는 라운드별 대진표, 리그는 이번 라운드 경기와 순위표를 큰 글씨로 표시.
+</li><li><strong>종료 후</strong>: 시상대와 컨페티(한 번).
+</li><li>조작 버튼 없음, 교사 화면에서만 열림(학생 화면에는 버튼 없음), 닫기는 우측 상단 버튼 또는 Esc.
+</li></ul>
 </li><li><strong>스플래시 화면 프롬프트 스킬</strong>: 전역 스킬 <code>make-homescreen</code>으로 Nano Banana용 스플래시 화면 이미지 프롬프트를 만들 수 있게 했다(앱 본체에는 아직 반영되지 않음).
 </li></ul>
 
@@ -102,6 +108,13 @@
 </li><li>클라이언트는 입력 칸(<code>.guess-slot</code>) 4개 고정 마크업을 없애고 <code>renderGuessSlots(containerId, count)</code>로 자릿수만큼 만든다. AI 후보 생성(<code>generateAllCandidates</code>)도 자릿수를 받아 재귀로 만든다(4자리 5,040개, 3자리 720개).
 </li></ul>
 
+<p><strong>칠판용 보기 구조 — "새 데이터 없이 기존 대회 화면의 데이터를 다시 그린다"</strong></p>
+<ul><li>별도 조회나 DB 변경 없이, 교사 대회 화면이 이미 불러와 실시간 구독 중인 상태(<code>tState</code>: 대회·참가자·경기)를 전체 화면 오버레이(<code>#t-board</code>)로 다시 그린다. 상태가 바뀔 때마다 <code>renderTournament()</code>가 오버레이가 열려 있으면 <code>renderBoardView()</code>를 함께 호출한다.
+</li><li>기존 렌더 함수(<code>tBuildMatchRow</code>, <code>tRenderStandings</code>, <code>tRenderBracket</code>, <code>tBuildChampionLines</code>)를 그대로 재사용하고 큰 글씨용 CSS(<code>.t-board</code>)만 추가했다. 시상대 그리기는 두 화면이 공유하도록 <code>tFillPodium</code>으로 분리했다.
+</li><li>진행 중 경기의 추측 내용은 조회하지 않으므로 화면에 나올 수 없다. 참가 QR은 코드가 같으면 다시 그리지 않는다.
+</li><li>대회 화면을 떠나거나(<code>cleanupTournament</code>) Esc·닫기 버튼을 누르면 닫힌다.
+</li></ul>
+
 </section>
 <section id="sec-5"><h2>5. 개발 과정 (타임라인)</h2>
 
@@ -109,7 +122,7 @@
 <p>v2 이후 진행한 작업이다.</p>
 
 
-<ol><li><strong>스플래시 화면 프롬프트 스킬 제작</strong>: 전역 스킬 <code>make-homescreen</code>을 만들었다. 처음엔 메뉴가 있는 홈 화면을 만들었지만, 사용자가 "첫 접속 시 보이는 스플래시 화면, 메뉴 없이 배경+제목만, 들어가기 버튼은 앱에서 구현"이라고 정정해 스킬을 수정했다.</li><li><strong>3자리 모드 방식 논의(<code>/plan</code>)</strong>: 사용자가 (1) 메인 화면 전역 드롭다운 vs (2) 기능별 선택 중 하나를 추천해 달라고 요청. 코드와 서버 함수를 조사해 "방 단위 설정"을 추천했다.</li><li><strong>구현 계획서 작성</strong>: 위치별 하드코딩(클라이언트 16곳, 서버 3개 함수)과 서버 설계를 담은 <code>.omc/plans/digits-mode-plan.md</code>. 사용자가 기본값에 동의.</li><li><strong>구현</strong>: DB 마이그레이션(<code>digits_mode</code>) → <code>game.js</code> 일반화 → 연습/방/학급 방 설정/대회 설정 UI → 배지 → README.</li><li><strong>기본값 변경 요청</strong>: "세 곳 모두 기본 게임 모드를 3자리로". UI 기본 선택과 학급 방 생성(<code>digits: 3</code>)을 바꾸고, 친구 초대는 그대로 두었다.</li></ol>
+<ol><li><strong>스플래시 화면 프롬프트 스킬 제작</strong>: 전역 스킬 <code>make-homescreen</code>을 만들었다. 처음엔 메뉴가 있는 홈 화면을 만들었지만, 사용자가 "첫 접속 시 보이는 스플래시 화면, 메뉴 없이 배경+제목만, 들어가기 버튼은 앱에서 구현"이라고 정정해 스킬을 수정했다.</li><li><strong>3자리 모드 방식 논의(<code>/plan</code>)</strong>: 사용자가 (1) 메인 화면 전역 드롭다운 vs (2) 기능별 선택 중 하나를 추천해 달라고 요청. 코드와 서버 함수를 조사해 "방 단위 설정"을 추천했다.</li><li><strong>구현 계획서 작성</strong>: 위치별 하드코딩(클라이언트 16곳, 서버 3개 함수)과 서버 설계를 담은 <code>.omc/plans/digits-mode-plan.md</code>. 사용자가 기본값에 동의.</li><li><strong>구현</strong>: DB 마이그레이션(<code>digits_mode</code>) → <code>game.js</code> 일반화 → 연습/방/학급 방 설정/대회 설정 UI → 배지 → README.</li><li><strong>기본값 변경 요청</strong>: "세 곳 모두 기본 게임 모드를 3자리로". UI 기본 선택과 학급 방 생성(<code>digits: 3</code>)을 바꾸고, 친구 초대는 그대로 두었다.</li><li><strong>전자칠판 화면 설명 요청</strong>: 보고서 v3의 "전자칠판용 교사 모니터" 아이디어가 구체적으로 무엇인지, 교사만 쓰게 할 수 있는지 사용자가 질문. 이미 있는 교사 조작 화면과 "보여주기 전용 큰 화면"을 구분해 설명했다.</li><li><strong>칠판용 보기 구현</strong>: 사용자가 "학급 방(자유 매칭)은 제외하고 안내한 대로" 구현을 요청. HTML 오버레이 → CSS → <code>renderBoardView</code> → 교사 화면 버튼·Esc 연결 → 테스트 → 화면 캡처 → README 순서로 진행.</li></ol>
 
 
 </section>
@@ -122,6 +135,10 @@
 </li><li><strong>DB 컬럼 기본값은 4, 클라이언트가 3을 명시</strong>: 배포 직후 옛 JS 캐시가 방을 만들어도 옛 동작(4자리)과 호환된다. 친구 초대는 자릿수 UI가 없어 4자리를 유지했다.
 </li><li><strong>연습 모드 자릿수는 브라우저에만 저장(<code>localStorage</code>)</strong>: 혼자 하는 설정이라 서버 저장이 필요 없고, 저장소를 못 쓰는 환경에서도 기본값으로 동작하도록 try/catch로 감쌌다.
 </li><li><strong>3자리일 때만 배지 표시</strong>: 4자리 화면의 변화를 최소화했다.
+</li><li><strong>칠판용 보기는 "보기 전용 + 교사 화면에서만 열림"</strong>: 조작 기능은 이미 관리 토큰으로 교사만 쓸 수 있으므로 칠판 화면에는 조작 버튼을 아예 넣지 않았다. 대진표·순위는 학생에게 보여 주려는 정보라 "교사만 조회 가능"을 위한 별도 조회 토큰은 만들지 않고, 버튼이 교사 화면에만 있게 했다.
+</li><li><strong>별도 URL/창이 아니라 같은 화면 위에 덮는 오버레이</strong>: 새 조회 경로와 DB 변경 없이 기존 구독·데이터를 재사용한다. 교사가 한 기기에서 열어 전자칠판에 미러링하는 사용을 전제로 했다.
+</li><li><strong>진행 중 경기의 추측 내용과 시도 진행률은 표시하지 않음</strong>: 칠판을 보는 다른 학생이 힌트를 얻거나 상대 전략을 엿볼 수 없게 하고, 구현도 단순하게 유지했다.
+</li><li><strong>학급 방(자유 매칭)은 제외</strong>: 사용자 결정. 진행 중 경기 표시까지 다룰 때 위 정보 노출 문제가 더 커지기 때문이기도 하다.
 </li></ul>
 
 </section>
@@ -133,6 +150,8 @@
 </li><li><strong>함수 오버로드 위험</strong>: <code>generate_secret()</code>과 <code>create_tournament(...)</code>는 인자를 추가하면 옛 함수가 남아 호출이 모호해질 수 있어 옛 함수를 <code>drop</code>한 뒤 다시 만들고 권한을 다시 부여했다(<code>pg_proc</code>로 오버로드가 하나뿐임을 확인).
 </li><li><strong>검증 도구 상실</strong>: 이전 세션의 jsdom 테스트 스크립트(37항목)가 임시 폴더에서 사라져 다시 돌릴 수 없었다. 새 테스트(21항목)를 다시 작성해 3자리 경로와 기본값을 확인했다.
 </li><li><strong>입력 칸 개수 고정 마크업</strong>: 슬롯이 HTML에 4개 고정이라 3칸으로 줄이려면 마크업을 비우고 JS로 렌더링하도록 바꿔야 했다.
+</li><li><strong>칠판용 보기 스타일 재사용</strong>: 대회 화면 스타일(<code>t-*</code>)이 <code>.t-screen</code> 안에서만 정의한 색상 변수에 의존해, 화면 밖 오버레이에서는 카드 배경이 비었다. 변수 정의와 <code>[hidden]</code> 규칙을 <code>.t-screen, .t-board</code>로 확장해 해결했다.
+</li><li><strong>큰 스크립트를 셸로 붙여 넣다 실패</strong>: 한 번에 여러 파일을 고치는 명령이 따옴표가 섞여 셸 파싱 오류로 아무것도 적용되지 않았다. 스크립트를 파일로 저장해 실행하는 방식으로 바꿨다(변경이 적용되지 않았음을 <code>git status</code>로 먼저 확인).
 </li></ul>
 
 </section>
@@ -141,6 +160,7 @@
 <ul><li><strong>서버 판정</strong>: 자릿수는 서버가 방 기준으로 검증한다. 3자리 방에 4자리 추측, 4자리 방에 3자리 추측, 3자리 방의 중복 숫자는 모두 예외로 거부된다(클라이언트가 조작되어도 우회 불가).
 </li><li><strong>권한</strong>: 새 컬럼 <code>sessions.digits</code>에만 컬럼 단위 SELECT/INSERT/UPDATE를 부여하고, <code>rooms.digits</code>는 SELECT만 부여했다(방 자릿수는 서버만 쓴다). 내부 함수의 EXECUTE 권한 규칙(v2)은 유지했다.
 </li><li><strong>설정 변경 범위</strong>: 학급 방의 <code>digits</code> 변경은 기존 정책(<code>capacity = 0</code> and <code>mode = 'free'</code>)으로만 허용된다. 다만 학급 방은 서버에서 교사와 학생을 구분하지 못하는 구조(로그인 없음)라, 방 코드를 아는 악의적 사용자가 API로 직접 자릿수를 바꾸는 것은 막지 못한다(턴 시간·시도 횟수도 동일한 기존 한계). 이미 열린 방은 <code>rooms.digits</code>가 고정이라 영향이 없다.
+</li><li><strong>칠판용 보기의 정보 노출</strong>: 화면에 나오는 데이터는 대회·참가자·경기 결과와 참가 코드뿐이다(모두 원래 학생이 조회 가능한 공개 데이터). 진행 중 경기의 추측 내용과 정답은 조회하지 않는다. 조작은 기존 관리 RPC(토큰 검증)만 가능하고 이 화면에는 조작 버튼이 없다. 닉네임은 <code>textContent</code>로 렌더링해 XSS를 막는다. 다만 "교사만 조회"를 서버에서 강제하지는 않는다(방 코드를 아는 사람은 원래도 대회 데이터를 조회할 수 있다).
 </li><li><strong>성능</strong>: AI 후보 생성이 재귀로 바뀌었지만 5,040개 수준이라 부담이 없다(3자리는 720개로 오히려 가볍다).
 </li><li><strong>v2에서 이어진 보안 조치</strong>: 관리 토큰 인증, <code>finish_room</code>/<code>forfeit_room</code> 하드닝, 잠금 순서 통일, 참가 트리거.
 </li></ul>
@@ -151,7 +171,9 @@
 <ul><li><strong>DB 시뮬레이션(롤백 트랜잭션)</strong>: 3자리 학급 방과 4자리 학급 방을 동시에 만들어 각각 방 <code>digits</code>, 비밀번호 길이, 잘못된 자릿수 추측 거부, 중복 숫자 거부, 정답 시 승리·방 종료를 확인. 3자리 토너먼트·리그(3명)에서 라운드 방이 모두 <code>digits=3</code>, 비밀번호 3자리임을 확인. 익명(anon) 권한으로 <code>digits=3</code> 세션 생성 확인.
 </li><li><strong>화면 시뮬레이션(jsdom, 21항목)</strong>: 3자리 비밀번호 생성·판정·검증, AI 3자리 추측, 연습 3자리 슬롯/제출 조건/승리, 4자리 복귀, 방 슬롯·배지·제출 조건, <code>digits</code> 없는 옛 방의 4자리 호환, 토너먼트 <code>p_digits</code> 전달, 세 곳의 기본값 3자리.
 </li><li><strong>화면 캡처(Playwright + 임시 로컬 서버)</strong>: 연습 설정 화면의 자릿수 토글, 3칸 입력 게임 화면(모바일 폭)을 확인.
-</li><li><strong>미확인</strong>: 옛 jsdom 회귀 테스트(37항목)는 재실행하지 못했다. 여러 실제 기기로 3자리 학급 방·토너먼트를 끝까지 진행하는 확인은 사용자 테스트에 의존한다. 데스크톱 폭에서 학급 방/대회 설정 화면의 자릿수 행 레이아웃도 별도 캡처는 하지 않았다.
+</li><li><strong>화면 시뮬레이션(jsdom) — 칠판용 보기 23항목</strong>: 교사 화면의 버튼 표시, 모집 중(코드·인원·참가자 칩·3자리 배지·QR 재렌더 방지·참가자 증가 반영), 토너먼트 진행 중(대진표 라운드 구역, 상태 문구, 조작 버튼 없음, 추측/정답 문구 없음), 리그(이번 라운드+순위표, 부전 +1점), 종료(시상대, 컨페티 한 번), 닫기·Esc·화면 이탈 시 닫힘, 학생 화면에서 버튼 숨김·열기 불가, 취소된 대회에서 버튼 숨김.
+</li><li><strong>화면 캡처(Playwright) — 칠판용 보기</strong>: 1600×900에서 진행 중 토너먼트(6명) 화면과 모집 중 리그(8명) 화면을 확인해 큰 글씨 배치와 QR 표시를 확인했다.
+</li><li><strong>미확인</strong>: 칠판용 보기를 실제 전자칠판/여러 기기에서 띄워 보지는 못했다(큰 화면 1600px 위주로만 확인). 큰 대회의 대진표가 한 화면에 다 들어오지 않을 수 있다. 옛 jsdom 회귀 테스트(37항목)는 재실행하지 못했다. 여러 실제 기기로 3자리 학급 방·토너먼트를 끝까지 진행하는 확인은 사용자 테스트에 의존한다. 데스크톱 폭에서 학급 방/대회 설정 화면의 자릿수 행 레이아웃도 별도 캡처는 하지 않았다.
 </li></ul>
 
 </section>
@@ -160,7 +182,7 @@
 <ul><li>저장소: <a href="https://github.com/poguni/strike-four">https://github.com/poguni/strike-four</a>
 </li><li>배포 URL: <a href="https://poguni.github.io/strike-four/">https://poguni.github.io/strike-four/</a>
 </li><li>배포 방식: 저장소 루트 <code>index.html</code>을 소스로 하는 GitHub Pages(<code>main</code>, <code>/root</code>).
-</li><li>DB 변경은 Supabase 마이그레이션 <code>digits_mode</code>로 이미 적용되어 있다. 배포 직후에는 이전 버전 브라우저 캐시가 옛 4칸 입력 화면을 보일 수 있어 강력 새로고침(Ctrl+F5) 안내가 필요하다. 옛 JS로 3자리 방에 들어가면 서버가 제출을 거부한다.
+</li><li>DB 변경은 Supabase 마이그레이션 <code>digits_mode</code>로 이미 적용되어 있다. 배포 직후에는 이전 버전 브라우저 캐시가 옛 4칸 입력 화면을 보일 수 있어 강력 새로고침(Ctrl+F5) 안내가 필요하다. 옛 JS로 3자리 방에 들어가면 서버가 제출을 거부한다. 칠판용 보기는 클라이언트만 바뀌었고(DB 변경 없음) 정적 파일 배포만으로 반영된다.
 </li></ul>
 
 </section>
@@ -175,6 +197,7 @@
 </li><li>토너먼트 연장전은 학생/교사 화면이 열려 있어야 자동 시작된다.
 </li><li>접속을 끊은 상대 때문에 경기가 끝나려면 그 선수가 연속 3번 시간 초과해야 한다.
 </li><li>로그인이 없어 같은 학생이 다른 기기로 접속하면 별도 사용자로 집계된다.
+</li><li>칠판용 보기는 교사 화면에서만 열 수 있고 학급 방(자유 매칭)에는 없다. 큰 대회(16강 이상 등)의 대진표는 한 화면에 다 들어오지 않아 칠판 화면 안에서 스크롤해야 할 수 있다. 진행 중 경기의 시도 횟수 같은 진행률은 보여 주지 않는다.
 </li><li>자동 UI 회귀 테스트가 저장소에 없다(테스트 스크립트는 작업 폴더 밖에만 존재하고, 이번에도 일부가 사라졌다).
 </li></ul>
 
@@ -200,7 +223,7 @@
 </li></ul>
 
 <p><strong>아이디어 수준</strong></p>
-<ul><li>전자칠판용 교사 모니터(실시간 대진표/순위표 대형 화면)
+<ul><li>칠판용 보기 확장: 학급 방(자유 매칭)용 화면(랭킹 상위 등), 별도 창/기기에서 여는 조회 링크, 큰 대회용 자동 스크롤·축소 보기, 경기별 진행률 표시(정보 노출에 주의)
 </li><li>5자리 이상 확장 또는 교사가 정하는 숫자 범위(0~9 외)
 </li><li>교사가 대회 옵션(연장전 횟수, 부전 승점 등)을 조정하는 고급 설정
 </li><li>관전 모드
@@ -214,15 +237,18 @@
 <ul><li>3자리 숫자 모드(혼자 연습·학급 방·토너먼트/리그전), 3자리 배지, 세 곳의 기본값 3자리
 </li><li>DB: <code>sessions.digits</code>/<code>rooms.digits</code>, <code>generate_secret(p_digits)</code>, 자릿수 인식 <code>submit_guess</code>/<code>judge_guess</code>/<code>match_waiting_players</code>/<code>tournament_create_match_room</code>/<code>create_tournament</code>
 </li><li>클라이언트: <code>renderGuessSlots</code>, 자릿수 인자를 받는 <code>generateSecret</code>/<code>judge</code>/<code>isValidGuess</code>/<code>createAI</code>
+</li><li><strong>칠판용 보기(전자칠판 화면)</strong>: 교사 대회 화면의 "🖥️ 칠판용 보기" 버튼, 전체 화면 읽기 전용 오버레이(<code>#t-board</code>, <code>openBoardView</code>/<code>closeBoardView</code>/<code>renderBoardView</code>), 큰 글씨 스타일(<code>.t-board</code>). DB 변경 없음.
 </li></ul>
 
 <p><strong>변경</strong></p>
 <ul><li>입력 칸이 HTML 고정 4개에서 JS 렌더링(자릿수만큼)으로 바뀜
 </li><li><code>submit_guess</code>의 형식 검사가 방 잠금 이후로 이동
+</li><li>시상대 그리기를 <code>tFillPodium</code>으로 분리해 대회 화면과 칠판용 보기가 공유
+</li><li>대회 화면 스타일의 색상 변수와 <code>[hidden]</code> 규칙을 <code>.t-screen, .t-board</code>로 확장
 </li></ul>
 
 <p><strong>문서/도구</strong></p>
-<ul><li>README에 3자리 모드 설명 추가, 계획서 <code>.omc/plans/digits-mode-plan.md</code> 작성
+<ul><li>README에 3자리 모드 및 칠판용 보기 설명 추가, 계획서 <code>.omc/plans/digits-mode-plan.md</code> 작성
 </li><li>전역 스킬 <code>make-homescreen</code>(스플래시 화면 프롬프트) 추가, 본 보고서(v3) 작성
 </li></ul>
 
